@@ -1,0 +1,106 @@
+---
+title: "Checkout"
+---
+
+# Checkout Interface
+
+The Checkout Interface provides endpoints to facilitate a seamless payment experience for your customers. It supports both hosted checkout pages and custom, merchant-built payment flows.
+
+## Retrieve Checkout Configuration
+
+Fetches the public configuration and state for a specific payment session. This data is sufficient to render a payment selection UI, displaying available tokens, networks, and merchant branding.
+
+**Endpoint**: `GET /checkout/:payCode`
+
+### Path Parameters
+
+| Parameter | Type     | Required | Description                                                               |
+| :-------- | :------- | :------- | :------------------------------------------------------------------------ |
+| `payCode` | `string` | Yes      | The unique 8-character alphanumeric code identifying the payment session. |
+
+### JSON Response
+
+```json
+{
+  "success": true,
+  "message": "payment data fetched successfully",
+  "data": {
+    "id": "60d5ecb8b5c9c62b3c1d4e5f",
+    "customerEmail": "customer@example.com",
+    "paymentReference": "ORDER-12345",
+    "paymentStatus": "pending",
+    "paymentAmount": "100.50",
+    "paymentCurrency": "USD",
+    "supportedNetworksPerToken": {
+      "USDT": ["TRON", "BSC", "ETHEREUM"],
+      "USDC": ["ETHEREUM", "POLYGON"]
+    },
+    "businessName": "Acme Corp",
+    "logoURL": "https://example.com/logo.png",
+    "minimumOutputAmount": 10.0,
+    "maximumOutputAmount": 10000.0
+  }
+}
+```
+
+---
+
+## Finalize Checkout Selection
+
+Locks the payment session to a specific cryptocurrency asset and blockchain network. This action generates a unique, ephemeral deposit address for the transaction.
+
+**Endpoint**: `POST /checkout/:payCode/complete`
+
+### Request Parameters
+
+| Parameter | Type     | Required | Description                                               |
+| :-------- | :------- | :------- | :-------------------------------------------------------- |
+| `token`   | `string` | Yes      | The selected cryptocurrency asset symbol (e.g., "USDT").  |
+| `network` | `string` | Yes      | The selected blockchain network identifier (e.g., "BSC"). |
+
+### Example Request Body
+
+```json
+{
+  "token": "USDT",
+  "network": "BSC"
+}
+```
+
+### JSON Response
+
+```json
+{
+  "success": true,
+  "message": "api payment processing",
+  "data": {
+    "receiveAddress": "0x123abc...",
+    "validUntil": "2023-01-01T13:00:00Z",
+    "totalPayableAmount": "100.50"
+  }
+}
+```
+
+---
+
+## Poll Checkout Status
+
+Retrieves the current status of the checkout session. This endpoint is optimized for high-frequency polling from frontend clients to detect payment completion in real-time.
+
+**Endpoint**: `GET /checkout/:payCode/status`
+
+### Path Parameters
+
+| Parameter | Type     | Required | Description                                                               |
+| :-------- | :------- | :------- | :------------------------------------------------------------------------ |
+| `payCode` | `string` | Yes      | The unique 8-character alphanumeric code identifying the payment session. |
+
+### JSON Response
+
+```json
+{
+  "success": true,
+  "message": "api payment status fetched successfully",
+  "data": "completed"
+}
+```

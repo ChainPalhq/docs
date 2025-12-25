@@ -1,0 +1,53 @@
+---
+title: "Webhooks"
+---
+
+# Webhooks
+
+Webhooks deliver real-time event notifications from ChainPal to your application. When a significant event occurs (such as a payment status change or settlement), ChainPal transmits a serialized JSON payload via an HTTP POST request to your configured endpoint.
+
+## Configuration & Management
+
+You can define a default webhook URL for both Live and Test environments within your [Developer Dashboard](https://dashboard.chainpal.org/developers). Additionally, you may override these defaults on a per-transaction basis by supplying a `callbackURL` parameter during the payment initialization.
+
+## Event Payload Structure
+
+ChainPal sends a standardized JSON object for all webhook events. Your endpoint must be prepared to parse this structure.
+
+### Example Payload
+
+```json
+{
+  "event": "payment.completed",
+  "data": {
+    "id": "60d5ecb8b5c9c62b3c1d4e5f",
+    "reference": "ORDER-12345",
+    "status": "completed",
+    "amount": "100.50",
+    "currency": "USD",
+    "token": "USDT",
+    "network": "BSC",
+    "txHash": "0x123abc...",
+    "customerEmail": "customer@example.com",
+    "metadata": {
+      "orderId": "1001"
+    }
+  }
+}
+```
+
+### Payload Fields
+
+| Field   | Type     | Description                                                                                 |
+| :------ | :------- | :------------------------------------------------------------------------------------------ |
+| `event` | `string` | The type of event that triggered the webhook (e.g., `payment.completed`, `payment.failed`). |
+| `data`  | `object` | The resource object associated with the event (e.g., the Payment object).                   |
+
+## Security & Verification
+
+To ensure the integrity and authenticity of received webhooks, you should employ the following verification strategies:
+
+1. **Signature Verification**: Verify the `X-ChainPal-Signature` header (if available) against your secret key to confirm the request originated from ChainPal.
+2. **Status Reconciliation**: Upon receiving a webhook, query the `Verify Payment Status` endpoint to confirm the current state of the transaction before taking action.
+
+_Note: Detailed signature verification guides are available in your dashboard security settings._

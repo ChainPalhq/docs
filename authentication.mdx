@@ -1,0 +1,50 @@
+---
+title: "Authentication"
+---
+
+# Authentication
+
+The ChainPal API relies on **Bearer Token Authentication** to secure access to resources. Every API request must include a valid API key in the `Authorization` header. You can manage your API credentials within the [Developer Dashboard](https://dashboard.chainpal.org/developers).
+
+## API Keys
+
+ChainPal provides distinct API keys for environment isolation (Live vs. Test) and client-side vs. server-side usage.
+
+### Key Types
+
+- **`Public Keys (pk)`**: Designed for client-side integrations (e.g., frontend widgets). These keys have restricted permissions limited to non-sensitive operations.
+- **`Secret Keys (sk)`**: Designed for server-side integrations. These keys grant full access to your account and **must never be exposed in client-side code**.
+
+### Key Prefixes
+
+All API keys are prefixed to indicate their environment and type:
+
+| Environment | Key Type | Prefix        |
+| :---------- | :------- | :------------ |
+| **Live**    | Public   | `cp_pk_live_` |
+| **Live**    | Secret   | `cp_sk_live_` |
+| **Test**    | Public   | `cp_pk_test_` |
+| **Test**    | Secret   | `cp_sk_test_` |
+
+## Authorization Header
+
+Clients must send the API key in the HTTP `Authorization` header using the standardized `Bearer` scheme:
+
+```bash
+Authorization: Bearer cp_sk_test_...
+```
+
+### Example Request
+
+``` expandable
+curl https://api.chainpal.org/api/v1/payments/initialize \
+  -H "Authorization: Bearer cp_sk_test_12345abcdef" \
+  -H "Content-Type: application/json" \
+  -d '{ ... }'
+```
+
+## Security Controls
+
+### IP Whitelisting
+
+To restrict access to your API credentials, you may configure **IP Whitelisting** in your dashboard settings. When enabled, requests originating from unauthorized IP addresses will be rejected with a `403 Forbidden` response, providing an additional layer of security for your integration.

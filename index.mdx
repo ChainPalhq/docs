@@ -1,6 +1,6 @@
 ---
 title: "Introduction"
-description: "Welcome to the ChainPal Developer Hub"
+description: "ChainPal API Documentation"
 ---
 
 <img
@@ -15,49 +15,53 @@ description: "Welcome to the ChainPal Developer Hub"
   alt="ChainPal Dark Hero"
 />
 
-# 👋 Welcome to ChainPal’s Developer Hub
+# ChainPal API Reference
 
-ChainPal is building the future of **borderless payments** by enabling individuals and businesses to send, receive, and manage money seamlessly across fiat and crypto.
+Welcome to the ChainPal Developer Hub. ChainPal provides a robust, RESTful API infrastructure enabling seamless integration of borderless payments into your applications. By abstracting the complexities of blockchain transactions and cross-border settlements, we empower developers to build scalable financial products that bridge fiat and cryptocurrency rails.
 
-Our mission is simple: **To simplify access to global finance and accelerate the adoption of stablecoin payments.**
+## Architecture & Design
+
+The ChainPal API is designed around REST principles. We enforce resource-oriented URLs, standard HTTP status codes, and JSON-encoded request and response bodies.
+
+### Key Capabilities
+
+- **Unified Payment Interface**: Process payments across multiple blockchains (Ethereum, BSC, Polygon, Arbitrum, Base, Celo) through a single, standardized API surface.
+- **Automated Settlement**: Automatically convert incoming crypto payments to local fiat currency (NGN, GHS, KES, ZAR) and settle directly to bank accounts.
+- **Multi-Tenancy**: Built for scale, allowing you to manage distinct business entities and sub-accounts programmatically.
+- **Webhook-Driven**: Rely on real-time event notifications to synchronize payment states with your internal systems.
+
+## Getting Started
+
+To begin integrating ChainPal, review the core concepts and resources below:
+
+### Core Resources
+
+- [**Authentication**](./authentication.mdx)
+  Secure your API requests using our Bearer token authentication scheme. Learn about API key management and environment isolation.
+
+- [**PaymentsAPI**](./payments.mdx)
+  The core resource for initializing, verifying, and retrieving payment sessions. Learn how to create payment intents and handle status lifecycles.
+
+- [**Checkout Interface**](./checkout.mdx)
+  Implement our hosted checkout flow or build a custom UI. Retrieve payment configurations and generate crypto addresses dynamically.
+
+- [**Webhooks & Events**](./webhooks.mdx)
+  Subscribe to server-side events to handle asynchronous payment updates, confirmations, and settlement notifications.
+
+- [**Error Handling**](./errors.mdx)
+  Standardized error codes and troubleshooting guides for robust integration handling.
+
+- [**Types & Enums**](./types.mdx)
+  Comprehensive reference for supported currencies, tokens, networks, and status enums.
+
+## Technical Support
+
+For integration assistance, technical inquiries, or to report issues, please consult the resources below:
+
+- � [Official Website](https://chainpal.org)
+- 📧 [Developer Support](mailto:dev-support@chainpal.xyz)
+- 🐦 [Twitter / X](https://x.com/chainpalhq)
 
 ---
 
-## 🌍 Why ChainPal?
-
-- **Cross-border payments made easy** – No hidden fees, no delays.  
-- **Crypto & fiat support** – Accept and send payments in both.  
-- **Business-friendly** – Manage multiple businesses under one account.  
-- **Scalable infrastructure** – Built for growth and reliability.  
-
----
-
-## 🚀 What to Expect Here
-
-This developer hub will soon provide:
-
-- **API documentation** for seamless integration  
-- **Guides & tutorials** for developers and businesses  
-- **SDKs & examples** in multiple languages  
-- **Webhooks & automation tools**  
-
----
-
-## 📅 Current Status
-
-We’re actively building ChainPal’s APIs.  
-For now, this page serves as a preview of what’s coming.  
-
-Stay tuned — **developer access is coming soon**.
-
----
-
-## 📬 Stay Connected
-
-- 🌐 [Website](https://chainpal.org)  
-- ✉️ [Contact us](mailto:help@chainpal.xyz)  
-- 🐦 [Follow us on Twitter](https://x.com/chainpalhq)
-
----
-
-✨ Thank you for your interest in ChainPal. Together, we’re shaping the future of payments.
+Empowering the next generation of global finance.

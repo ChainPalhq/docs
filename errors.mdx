@@ -1,0 +1,59 @@
+---
+title: "Errors"
+---
+
+# Errors
+
+# Error Handling
+
+ChainPal leverages standard HTTP status codes to communicate the outcome of API requests. Errors are returned as a unified JSON object, providing both a machine-readable success flag and a human-readable message.
+
+## HTTP Status Codes
+
+| Code  | Status                | Description                                                                         |
+| :---- | :-------------------- | :---------------------------------------------------------------------------------- |
+| `200` | OK                    | The request finished successfully.                                                  |
+| `400` | Bad Request           | The request was malformed, missing parameters, or contained invalid data.           |
+| `401` | Unauthorized          | Authentication failed. The API key is missing, invalid, or expired.                 |
+| `403` | Forbidden             | The authenticated client lacks permission to access the resource, or IP is blocked. |
+| `404` | Not Found             | The requested resource (e.g., specific Payment ID) could not be located.            |
+| `429` | Too Many Requests     | The client has exceeded the assigned rate limits.                                   |
+| `500` | Internal Server Error | An unexpected server-side error occurred. Please contact support.                   |
+
+## Error Response Structure
+
+All error responses adhere to the following schema:
+
+```json
+{
+  "success": false,
+  "message": "Descriptive error message here",
+  "data": null
+}
+```
+
+| Field     | Type      | Description                                                 |
+| :-------- | :-------- | :---------------------------------------------------------- |
+| `success` | `boolean` | Always `false` for error responses.                         |
+| `message` | `string`  | A descriptive message detailing the cause of the error.     |
+| `data`    | `null`    | Reserved for additional context; typically null for errors. |
+
+### Example: Validation Error
+
+```json
+{
+  "success": false,
+  "message": "the amount you provided is invalid, amount must be greater than zero, please try again",
+  "data": null
+}
+```
+
+### Example: Authentication Error
+
+```json
+{
+  "success": false,
+  "message": "api key is invalid, use the format 'Bearer <api key>'",
+  "data": null
+}
+```

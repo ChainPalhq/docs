@@ -1,0 +1,123 @@
+---
+title: "Payments"
+---
+
+# Payments API
+
+The Payments resource enables the programmatic creation and management of cryptocurrency payment sessions. It supports the full lifecycle of a payment, from initialization to status verification and reconciliation.
+
+## Initialize Payment Session
+
+Creates a new payment intent and generates the necessary configuration for a checkout session. The returned `paymentURL` can be used to redirect users to a hosted payment page, or `paymentId` can be used to construct a custom checkout flow.
+
+**Endpoint**: `POST /payments/initialize`
+
+### Request Parameters
+
+| Parameter           | Type     | Required | Description                                                                                                 |
+| :------------------ | :------- | :------- | :---------------------------------------------------------------------------------------------------------- |
+| `amount`            | `number` | Yes      | The monetary value to be collected in the account's default currency.                                       |
+| `customerEmail`     | `string` | Yes      | The email address of the customer for notifications and receipts.                                           |
+| `customerFirstName` | `string` | No       | Customer's first name.                                                                                      |
+| `customerLastName`  | `string` | No       | Customer's last name.                                                                                       |
+| `reference`         | `string` | No       | A unique merchant-provided identifier for reconciliation. If omitted, the system generates one.             |
+| `callbackURL`       | `string` | No       | The URL to receive asynchronous webhook events for this specific payment. Overrides account-level settings. |
+| `failureURL`        | `string` | No       | The redirection URL for user navigation upon payment failure.                                               |
+| `metadata`          | `object` | No       | A set of key-value pairs (`string: string`) for storing custom structured data.                             |
+
+### Example Request Body
+
+```json
+{
+  "amount": 100.5,
+  "customerEmail": "customer@example.com",
+  "customerFirstName": "john",
+  "customerLastName": "doe",
+  "reference": "ORDER-12345",
+  "metadata": {
+    "productId": "prod_888"
+  }
+}
+```
+
+### JSON Response
+
+```json
+{
+  "success": true,
+  "message": "payment initialized successfully",
+  "data": {
+    "paymentId": "60d5ecb8b5c9c62b3c1d4e5f",
+    "paymentURL": "https://pay.chainpal.org/c/abc12345"
+  }
+}
+```
+
+---
+
+## Verify Payment Status
+
+Retrieves the real-time status of a payment session. This endpoint is designed for client-side polling or server-side verification.
+
+**Endpoint**: `GET /payments/:paymentId/verify`
+
+### Path Parameters
+
+| Parameter   | Type     | Required | Description                                           |
+| :---------- | :------- | :------- | :---------------------------------------------------- |
+| `paymentId` | `string` | Yes      | The unique system identifier for the payment session. |
+
+### JSON Response
+
+```json
+{
+  "success": true,
+  "message": "payment status fetched successfully",
+  "data": {
+    "paymentReference": "ORDER-12345",
+    "paymentStatus": "completed",
+    "paymentAmount": "100.50",
+    "paymentCurrency": "USD"
+  }
+}
+```
+
+---
+
+## Retrieve Payment Details
+
+Fetches the complete data model for a specific payment, including customer information, blockchain transaction hashes, and timestamps.
+
+**Endpoint**: `GET /payments/:paymentId`
+
+### Path Parameters
+
+| Parameter   | Type     | Required | Description                                           |
+| :---------- | :------- | :------- | :---------------------------------------------------- |
+| `paymentId` | `string` | Yes      | The unique system identifier for the payment session. |
+
+### JSON Response
+
+```json
+{
+  "success": true,
+  "message": "payment fetched successfully",
+  "data": {
+    "id": "60d5ecb8b5c9c62b3c1d4e5f",
+    "reference": "ORDER-12345",
+    "fiatAmount": "100.50",
+    "currency": "USD",
+    "status": "completed",
+    "customerInfo": {
+      "email": "customer@example.com",
+      "firstName": "John",
+      "lastName": "Doe"
+    },
+    "token": "USDT",
+    "network": "BSC",
+    "txHash": "0x123...",
+    "createdAt": "2023-01-01T12:00:00Z",
+    "completedAt": "2023-01-01T12:05:00Z"
+  }
+}
+```
