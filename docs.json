@@ -11,13 +11,15 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "API Reference",
         "groups": [
           {
-            "group": "Get Started",
-            "pages": [
-              "index"
-            ]
+            "group": "Getting Started",
+            "pages": ["index", "authentication", "errors", "types"]
+          },
+          {
+            "group": "Core Resources",
+            "pages": ["payments", "checkout", "webhooks"]
           }
         ]
       }
