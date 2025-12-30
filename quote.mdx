@@ -1,0 +1,136 @@
+---
+title: "Quote"
+description: "Get real-time conversion quotes before creating payments"
+---
+
+# Quote API
+
+The Quote API allows you to get real-time conversion rates before creating a payment. This is useful for displaying the expected crypto amount to your users.
+
+## Get Quote
+
+Returns the current conversion rate and calculated crypto amount for a given fiat amount, token, and network.
+
+<Note>
+  **Authentication**: Requires a **Public Key** (`cp_pk_test_` or `cp_pk_live_`)
+</Note>
+
+```http
+POST /api/v1/payments/quote
+```
+
+### Request Body
+
+| Parameter      | Type      | Required | Description                                                                   |
+| :------------- | :-------- | :------- | :---------------------------------------------------------------------------- |
+| `amount`       | `number`  | Yes      | The fiat amount to convert                                                    |
+| `token`        | `string`  | Yes      | The cryptocurrency token (`USDT` or `USDC`)                                   |
+| `network`      | `string`  | Yes      | The blockchain network (see [Supported Networks](./types#supported-networks)) |
+| `collectInUSD` | `boolean` | No       | If `true`, treat the amount as USD. Default: `false`                          |
+
+### Example Request
+
+```bash
+curl -X POST https://api.chainpal.org/api/v1/payments/quote \
+  -H "Authorization: Bearer cp_pk_test_abc123" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amount": 5000,
+    "token": "USDC",
+    "network": "base"
+  }'
+```
+
+### Response
+
+```json
+{
+  "success": true,
+  "message": "quote fetched successfully",
+  "data": {
+    "rate": "1650.50",
+    "cryptoAmount": "3.029024",
+    "fiatAmount": "5000.00",
+    "currency": "NGN"
+  }
+}
+```
+
+### Response Fields
+
+| Field          | Type     | Description                                            |
+| :------------- | :------- | :----------------------------------------------------- |
+| `rate`         | `string` | The conversion rate (1 crypto = X fiat)                |
+| `cryptoAmount` | `string` | The calculated crypto amount the customer needs to pay |
+| `fiatAmount`   | `string` | The fiat amount (formatted to 2 decimal places)        |
+| `currency`     | `string` | The fiat currency code based on your account's country |
+
+## How Rates Work
+
+### Local Currency Collection
+
+When `collectInUSD` is `false` (default), the amount is treated as your local currency (NGN, GHS, KES, or ZAR based on your account country).
+
+```json
+{
+  "amount": 5000,
+  "token": "USDC",
+  "network": "base"
+}
+```
+
+The API calculates: `cryptoAmount = amount / rate`
+
+### USD Collection
+
+When `collectInUSD` is `true`, the amount is treated as USD regardless of your account's country:
+
+```json
+{
+  "amount": 100,
+  "token": "USDC",
+  "network": "base",
+  "collectInUSD": true
+}
+```
+
+For USD collection, the crypto amount is calculated using the token's USD market price.
+
+## Rate Validity
+
+<Warning>
+  Rates are indicative and subject to change. The actual rate applied will be
+  determined when the customer completes the checkout. For the most accurate
+  pricing, direct customers to checkout promptly after displaying a quote.
+</Warning>
+
+## Supported Token/Network Combinations
+
+The available token/network combinations depend on your account's country. See [Types & Enums](./types) for the complete list.
+
+### Example: Nigerian Merchant
+
+```bash
+# USDC on Base - Supported
+curl -X POST https://api.chainpal.org/api/v1/payments/quote \
+  -H "Authorization: Bearer cp_pk_test_abc123" \
+  -d '{"amount": 5000, "token": "USDC", "network": "base"}'
+
+# USDC on Celo - Supported
+curl -X POST https://api.chainpal.org/api/v1/payments/quote \
+  -H "Authorization: Bearer cp_pk_test_abc123" \
+  -d '{"amount": 5000, "token": "USDC", "network": "celo"}'
+
+# USDT on Polygon - Supported
+curl -X POST https://api.chainpal.org/api/v1/payments/quote \
+  -H "Authorization: Bearer cp_pk_test_abc123" \
+  -d '{"amount": 5000, "token": "USDT", "network": "polygon"}'
+```
+
+## Error Responses
+
+| Status | Message                     | Description                                                     |
+| :----- | :-------------------------- | :-------------------------------------------------------------- |
+| `400`  | `pair not supported`        | The token/network combination is not available for your country |
+| `400`  | `amount must be at least X` | Amount is below the minimum limit                               |
+| `400`  | `amount cannot exceed X`    | Amount is above the maximum limit                               |
