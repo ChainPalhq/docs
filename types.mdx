@@ -1,104 +1,197 @@
 ---
-title: "Types"
+title: "Types & Enums"
+description: "Reference for supported tokens, networks, currencies, and status values"
 ---
 
-#  Types & Enums
+# Types & Enums
 
-Reference for common types and enum values used in the API.
+This page documents all the types, enums, and constants used in the ChainPal API.
 
-## Order Status
+## Payment Status
 
-The status of a payment.
+The current state of a payment session.
 
-| Value        | Description                                    |
-| :----------- | :--------------------------------------------- |
-| `pending`    | Payment initialized but no funds detected yet. |
-| `processing` | Funds detected, payment is processing.         |
-| `completed`  | Payment confirmed and funds settled.           |
-| `failed`     | Payment failed (e.g., underpayment, timeout).  |
-| `expired`    | The payment window has expired.                |
-
-## Settlement Currencies
-
-Supported fiat currencies for **settlement** (payout to bank accounts).
-
-- `NGN` - Nigerian Naira
-- `GHS` - Ghanaian Cedi
-- `KES` - Kenyan Shilling
-- `ZAR` - South African Rand
-
-> **Note:** `USD` is supported for **collection pricing** (e.g., charging \$100), but settlement will occur in the local currency of the merchant's country. We do not currently support direct USD settlements.
-
-## Supported Tokens
-
-Cryptocurrencies supported for payment.
-
-- `USDT` - Tether
-- `USDC` - USD Coin
-
-### Token Contract Addresses
-
-To ensure you are transacting with the correct tokens, please refer to the official contract addresses below.
-
-#### USDT (Tether)
-
-| Network             | Contract Address                             |
-| :------------------ | :------------------------------------------- |
-| **Arbitrum One**    | `0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9` |
-| **Base**            | `0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2` |
-| **BNB Smart Chain** | `0x55d398326f99059fF775485246999027B3197955` |
-| **Lisk**            | `0x05D032ac25d322df992303dCa074EE7392C117b9` |
-| **Celo**            | `0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e` |
-| **Polygon**         | `0xc2132D05D31c914a87C6611C10748AEb04B58e8F` |
-
-#### USDC (USD Coin)
-
-| Network          | Contract Address                             |
-| :--------------- | :------------------------------------------- |
-| **Arbitrum One** | `0xaf88d065e77c8cC2239327C5EDb3A432268e5831` |
-| **Base**         | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` |
-| **Lisk**         | `0xF242275d3a6527d877f2c927a82D9b057609cc71` |
-| **Celo**         | `0xcebA9300f2b948710d2653dD7B07f33A8B32118C` |
-| **Polygon**      | `0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359` |
-
-## Transaction Limits
-
-The following limits apply to payment amounts based on the merchant's country.
-
-### Minimum Fiat Amounts
-
-- **Nigeria (NGN)**: 1,000.00
-- **Ghana (GHS)**: 20.00
-- **Kenya (KES)**: 50.00
-- **South Africa (ZAR)**: 35.00
-
-### Maximum Fiat Amounts
-
-- **Nigeria (NGN)**: 1,000,000.00
-- **Ghana (GHS)**: 5,000.00
-- **Kenya (KES)**: 250,000.00
-- **South Africa (ZAR)**: 50,000.00
-
-### USD Collection Limits
-
-- **Minimum**: \$1.00 (Global)
-- **Maximum**: \$5,000.00 (Global)
-
-## Supported Networks
-
-Blockchain networks supported by ChainPal.
-
-- `ETHEREUM` - Ethereum Mainnet
-- `BSC` - BNB Smart Chain
-- `POLYGON` - Polygon (MATIC)
-- `ARBITRUM` - Arbitrum One
-- `BASE` - Base (Coinbase L2)
-- `CELO` - Celo
-- `LISK` - Lisk
+| Value        | Description                                                |
+| :----------- | :--------------------------------------------------------- |
+| `pending`    | Payment created, waiting for customer to complete checkout |
+| `processing` | Payment received, being processed and settled              |
+| `completed`  | Payment successful, funds settled to merchant              |
+| `expired`    | Payment window expired before funds were received          |
+| `failed`     | Payment failed due to an error                             |
 
 ## API Environment
 
-| Value  | Description                         |
-| :----- | :---------------------------------- |
-| `live` | Production environment. Real money. |
-| `test` | Sandbox environment. Testnet funds. |
+| Value  | Description                                     |
+| :----- | :---------------------------------------------- |
+| `test` | Sandbox environment for development and testing |
+| `live` | Production environment with real transactions   |
+
+## Supported Tokens
+
+Cryptocurrencies accepted for payment.
+
+| Token  | Name     | Description           |
+| :----- | :------- | :-------------------- |
+| `USDT` | Tether   | USD-pegged stablecoin |
+| `USDC` | USD Coin | USD-pegged stablecoin |
+
+## Supported Networks
+
+Blockchain networks available for payments. Availability varies by merchant country.
+
+| Network        | Chain                | Chain ID |
+| :------------- | :------------------- | :------- |
+| `base`         | Base (Coinbase L2)   | 8453     |
+| `celo`         | Celo                 | 42220    |
+| `celo-sepolia` | Celo Sepolia Testnet | 44787    |
+| `polygon`      | Polygon              | 137      |
+| `bsc`          | BNB Smart Chain      | 56       |
+| `arbitrum`     | Arbitrum One         | 42161    |
+| `lisk`         | Lisk                 | 1135     |
+
+<Note>
+  `celo-sepolia` is only available in the **test** environment for development
+  purposes.
+</Note>
+
+## Token/Network Availability by Country
+
+The available token/network combinations depend on the merchant's country:
+
+### Nigeria (NGN)
+
+| Token | Available Networks                                    |
+| :---- | :---------------------------------------------------- |
+| USDC  | `base`, `celo`, `celo-sepolia` (test only), `polygon` |
+| USDT  | `celo`, `polygon`                                     |
+
+### Ghana (GHS)
+
+| Token | Available Networks        |
+| :---- | :------------------------ |
+| USDC  | `base`, `celo`, `polygon` |
+| USDT  | `celo`, `polygon`         |
+
+### Kenya (KES)
+
+| Token | Available Networks        |
+| :---- | :------------------------ |
+| USDC  | `base`, `celo`, `polygon` |
+| USDT  | `celo`, `polygon`         |
+
+### South Africa (ZAR)
+
+| Token | Available Networks |
+| :---- | :----------------- |
+| USDT  | `bsc`              |
+
+## Settlement Currencies
+
+Fiat currencies for settlement (payout to bank accounts).
+
+| Code  | Currency           | Country      |
+| :---- | :----------------- | :----------- |
+| `NGN` | Nigerian Naira     | Nigeria      |
+| `GHS` | Ghanaian Cedi      | Ghana        |
+| `KES` | Kenyan Shilling    | Kenya        |
+| `ZAR` | South African Rand | South Africa |
+
+<Note>
+  `USD` is supported for **collection** (charging customers in USD), but
+  settlement always occurs in the merchant's local currency.
+</Note>
+
+## Transaction Limits
+
+### Local Currency Limits
+
+| Country      | Currency | Minimum  | Maximum      |
+| :----------- | :------- | :------- | :----------- |
+| Nigeria      | NGN      | 1,000.00 | 1,000,000.00 |
+| Ghana        | GHS      | 20.00    | 5,000.00     |
+| Kenya        | KES      | 50.00    | 250,000.00   |
+| South Africa | ZAR      | 35.00    | 50,000.00    |
+
+### USD Collection Limits
+
+When collecting in USD (`collectInUSD: true`):
+
+| Country      | Minimum USD | Maximum USD |
+| :----------- | :---------- | :---------- |
+| Nigeria      | $1.00       | $2,000.00   |
+| Ghana        | $1.50       | $1,600.00   |
+| Kenya        | $1.50       | $4,000.00   |
+| South Africa | $2.00       | $5,000.00   |
+
+**Global Defaults:**
+
+- Minimum: $1.00
+- Maximum: $5,000.00
+
+### Minimum Crypto Amounts
+
+| Token | Minimum Amount |
+| :---- | :------------- |
+| USDT  | 1.0            |
+| USDC  | 1.0            |
+
+## Token Contract Addresses
+
+Official contract addresses for supported tokens on each network.
+
+### USDT (Tether)
+
+| Network         | Contract Address                             |
+| :-------------- | :------------------------------------------- |
+| Arbitrum One    | `0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9` |
+| Base            | `0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2` |
+| BNB Smart Chain | `0x55d398326f99059fF775485246999027B3197955` |
+| Lisk            | `0x05D032ac25d322df992303dCa074EE7392C117b9` |
+| Celo            | `0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e` |
+| Polygon         | `0xc2132D05D31c914a87C6611C10748AEb04B58e8F` |
+
+### USDC (USD Coin)
+
+| Network      | Contract Address                             |
+| :----------- | :------------------------------------------- |
+| Arbitrum One | `0xaf88d065e77c8cC2239327C5EDb3A432268e5831` |
+| Base         | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` |
+| Lisk         | `0xF242275d3a6527d877f2c927a82D9b057609cc71` |
+| Celo         | `0xcebA9300f2b948710d2653dD7B07f33A8B32118C` |
+| Celo Sepolia | `0x01C5C0122039549AD1493B8220cABEdD739BC44E` |
+| Polygon      | `0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359` |
+
+## Customer Info Object
+
+Customer information included in payment requests.
+
+```json
+{
+  "email": "customer@example.com",
+  "firstName": "John",
+  "lastName": "Doe"
+}
+```
+
+| Field       | Type     | Required | Description                             |
+| :---------- | :------- | :------- | :-------------------------------------- |
+| `email`     | `string` | Yes      | Customer's email address                |
+| `firstName` | `string` | No       | Customer's first name (2-50 characters) |
+| `lastName`  | `string` | No       | Customer's last name (2-50 characters)  |
+
+## Metadata Object
+
+Custom key-value pairs for storing additional data with payments.
+
+```json
+{
+  "orderId": "12345",
+  "productName": "Premium Plan",
+  "userId": "user_abc123"
+}
+```
+
+- Keys and values must be strings
+- Maximum key length: 50 characters
+- Maximum value length: 500 characters
+- Maximum pairs: 20

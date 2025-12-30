@@ -1,67 +1,94 @@
 ---
 title: "Introduction"
-description: "ChainPal API Documentation"
+description: "ChainPal Developer API Documentation"
 ---
 
-<img
-  className="block dark:hidden mx-auto"
-  src="/images/hero-light.png"
-  alt="ChainPal Light Hero"
-/>
+# ChainPal Developer API
 
-<img
-  className="hidden dark:block mx-auto"
-  src="/PurpleandWhiteCleanGeometricStartupPitchDeckPresentation.png"
-  alt="ChainPal Dark Hero"
-/>
+Welcome to the ChainPal Developer API documentation. ChainPal provides a RESTful API that enables businesses to accept cryptocurrency payments and receive automatic settlement in local fiat currency.
 
-# ChainPal API Reference
+## Base URL
 
-Welcome to the ChainPal Developer Hub. ChainPal provides a robust, RESTful API infrastructure enabling seamless integration of borderless payments into your applications. By abstracting the complexities of blockchain transactions and cross-border settlements, we empower developers to build scalable financial products that bridge fiat and cryptocurrency rails.
+All API requests are made to:
 
-## Architecture & Design
+```
+https://api.chainpal.org/api/v1
+```
 
-The ChainPal API is designed around REST principles. We enforce resource-oriented URLs, standard HTTP status codes, and JSON-encoded request and response bodies.
+## How It Works
 
-### Key Capabilities
+1. **Initialize a Payment** - Create a payment session with the amount and customer details
+2. **Redirect Customer** - Send your customer to the hosted checkout page
+3. **Customer Pays** - Customer selects their preferred cryptocurrency and completes payment
+4. **Automatic Settlement** - We convert the crypto and settle directly to your bank account
+5. **Webhook Notification** - Receive real-time updates about payment status
 
-- **Unified Payment Interface**: Process payments across multiple blockchains (Ethereum, BSC, Polygon, Arbitrum, Base, Celo) through a single, standardized API surface.
-- **Automated Settlement**: Automatically convert incoming crypto payments to local fiat currency (NGN, GHS, KES, ZAR) and settle directly to bank accounts.
-- **Multi-Tenancy**: Built for scale, allowing you to manage distinct business entities and sub-accounts programmatically.
-- **Webhook-Driven**: Rely on real-time event notifications to synchronize payment states with your internal systems.
+## Core Capabilities
 
-## Getting Started
+- **Multi-Token Support**: Accept payments in USDT and USDC
+- **Multi-Network Support**: Support for Base, Celo, Polygon, and BSC networks (varies by country)
+- **Automatic Conversion**: Crypto payments are automatically converted to local fiat currency
+- **Direct Settlement**: Funds settle directly to your registered bank account
+- **Real-time Webhooks**: Receive instant notifications when payment status changes
 
-To begin integrating ChainPal, review the core concepts and resources below:
+## Supported Countries
 
-### Core Resources
+ChainPal currently supports merchants in:
 
-- [**Authentication**](./authentication.mdx)
-  Secure your API requests using our Bearer token authentication scheme. Learn about API key management and environment isolation.
+| Country      | Currency | Settlement    |
+| :----------- | :------- | :------------ |
+| Nigeria      | NGN      | Bank Transfer |
+| Ghana        | GHS      | Bank Transfer |
+| Kenya        | KES      | Bank Transfer |
+| South Africa | ZAR      | Bank Transfer |
 
-- [**PaymentsAPI**](./payments.mdx)
-  The core resource for initializing, verifying, and retrieving payment sessions. Learn how to create payment intents and handle status lifecycles.
+## API Resources
 
-- [**Checkout Interface**](./checkout.mdx)
-  Implement our hosted checkout flow or build a custom UI. Retrieve payment configurations and generate crypto addresses dynamically.
+- [**Authentication**](./authentication) - API key types and authentication methods
+- [**Payments**](./payments) - Create and manage payment sessions
+- [**Quote**](./quote) - Get real-time conversion quotes
+- [**Checkout**](./checkout) - Hosted checkout page endpoints
+- [**Webhooks**](./webhooks) - Event notifications and signature verification
+- [**Types & Enums**](./types) - Supported tokens, networks, and status values
+- [**Errors**](./errors) - Error codes and handling
 
-- [**Webhooks & Events**](./webhooks.mdx)
-  Subscribe to server-side events to handle asynchronous payment updates, confirmations, and settlement notifications.
+## Environments
 
-- [**Error Handling**](./errors.mdx)
-  Standardized error codes and troubleshooting guides for robust integration handling.
+ChainPal provides two environments for development and production:
 
-- [**Types & Enums**](./types.mdx)
-  Comprehensive reference for supported currencies, tokens, networks, and status enums.
+| Environment | Description                                         | Key Prefix                   |
+| :---------- | :-------------------------------------------------- | :--------------------------- |
+| **Test**    | For development and testing. Uses testnet networks. | `cp_pk_test_`, `cp_sk_test_` |
+| **Live**    | For production. Real transactions and settlements.  | `cp_pk_live_`, `cp_sk_live_` |
 
-## Technical Support
+## Quick Start
 
-For integration assistance, technical inquiries, or to report issues, please consult the resources below:
+```bash
+# Initialize a payment
+curl -X POST https://api.chainpal.org/api/v1/payments \
+  -H "Authorization: Bearer cp_pk_test_your_public_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amount": 5000,
+    "customerEmail": "customer@example.com"
+  }'
+```
 
-- � [Official Website](https://chainpal.org)
+Response:
+
+```json
+{
+  "success": true,
+  "message": "payment initialized successfully",
+  "data": {
+    "paymentId": "507f1f77bcf86cd799439011",
+    "paymentURL": "https://pay.chainpal.org/c/abc123xyz"
+  }
+}
+```
+
+## Support
+
+- 🌐 [Official Website](https://chainpal.org)
 - 📧 [Developer Support](mailto:dev-support@chainpal.xyz)
 - 🐦 [Twitter / X](https://x.com/chainpalhq)
-
----
-
-Empowering the next generation of global finance.

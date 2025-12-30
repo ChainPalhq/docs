@@ -1,53 +1,321 @@
 ---
 title: "Webhooks"
+description: "Real-time event notifications and signature verification"
 ---
 
 # Webhooks
 
-Webhooks deliver real-time event notifications from ChainPal to your application. When a significant event occurs (such as a payment status change or settlement), ChainPal transmits a serialized JSON payload via an HTTP POST request to your configured endpoint.
+Webhooks allow you to receive real-time notifications when events occur in your ChainPal account, such as when a payment is completed or fails.
 
-## Configuration & Management
+## Configuration
 
-You can define a default webhook URL for both Live and Test environments within your [Developer Dashboard](https://dashboard.chainpal.org/developers). Additionally, you may override these defaults on a per-transaction basis by supplying a `callbackURL` parameter during the payment initialization.
+Configure your webhook URLs in the [ChainPal Dashboard](https://app.chainpal.org) under **Integration > Webhooks**.
+
+You can set separate webhook URLs for:
+
+- **Live Environment**: Receives events from production payments
+- **Test Environment**: Receives events from test payments
+
+<Note>
+  You must generate a **Webhook Signing Secret** before you can configure
+  webhook URLs. This secret is used to verify that webhooks originate from
+  ChainPal.
+</Note>
+
+## Webhook Delivery
+
+When an event occurs, ChainPal sends an HTTP POST request to your configured webhook URL with:
+
+- **Content-Type**: `application/json`
+- **Method**: `POST`
+- **Timeout**: 10 seconds
+- **Retries**: Up to 7 attempts with exponential backoff
+
+### Retry Schedule
+
+If your endpoint doesn't respond with a 2xx status code, we retry with the following schedule:
+
+| Attempt | Delay After Previous |
+| :------ | :------------------- |
+| 1       | Immediate            |
+| 2       | 30 seconds           |
+| 3       | 2 minutes            |
+| 4       | 15 minutes           |
+| 5       | 1 hour               |
+| 6       | 6 hours              |
+| 7       | 24 hours             |
+
+After 7 failed attempts (spanning approximately 31 hours), the webhook is marked as exhausted and no further retries are attempted.
 
 ## Event Payload Structure
 
-ChainPal sends a standardized JSON object for all webhook events. Your endpoint must be prepared to parse this structure.
-
-### Example Payload
+All webhook events follow this structure:
 
 ```json
 {
-  "event": "payment.completed",
+  "id": "evt_abc123xyz",
+  "type": "payment.completed",
+  "environment": "live",
+  "createdAt": "2024-01-15T14:30:00Z",
   "data": {
-    "id": "60d5ecb8b5c9c62b3c1d4e5f",
-    "reference": "ORDER-12345",
-    "status": "completed",
-    "amount": "100.50",
-    "currency": "USD",
-    "token": "USDT",
-    "network": "BSC",
+    // Event-specific payload
+  }
+}
+```
+
+### Top-Level Fields
+
+| Field         | Type     | Description                                            |
+| :------------ | :------- | :----------------------------------------------------- |
+| `id`          | `string` | Unique identifier for this event (use for idempotency) |
+| `type`        | `string` | The event type (e.g., `payment.completed`)             |
+| `environment` | `string` | `test` or `live`                                       |
+| `createdAt`   | `string` | ISO 8601 timestamp when the event was created          |
+| `data`        | `object` | Event-specific payload data                            |
+
+## Event Types
+
+### payment.completed
+
+Sent when a payment has been successfully received and processed.
+
+```json
+{
+  "id": "evt_abc123xyz",
+  "type": "payment.completed",
+  "environment": "live",
+  "createdAt": "2024-01-15T14:30:00Z",
+  "data": {
+    "paymentId": "507f1f77bcf86cd799439011",
+    "reference": "checkoutORDER12345678",
+    "fiatAmount": "5000.00",
+    "currency": "NGN",
+    "cryptoAmount": "3.029024",
+    "token": "USDC",
+    "network": "base",
     "txHash": "0x123abc...",
     "customerEmail": "customer@example.com",
     "metadata": {
-      "orderId": "1001"
+      "orderId": "12345"
     }
   }
 }
 ```
 
-### Payload Fields
+### payment.failed
 
-| Field   | Type     | Description                                                                                 |
-| :------ | :------- | :------------------------------------------------------------------------------------------ |
-| `event` | `string` | The type of event that triggered the webhook (e.g., `payment.completed`, `payment.failed`). |
-| `data`  | `object` | The resource object associated with the event (e.g., the Payment object).                   |
+Sent when a payment has failed (e.g., expired, underpaid, or processing error).
 
-## Security & Verification
+```json
+{
+  "id": "evt_def456uvw",
+  "type": "payment.failed",
+  "environment": "live",
+  "createdAt": "2024-01-15T15:00:00Z",
+  "data": {
+    "paymentId": "507f1f77bcf86cd799439011",
+    "reference": "checkoutORDER12345678",
+    "fiatAmount": "5000.00",
+    "currency": "NGN",
+    "status": "expired",
+    "errorMessage": "Payment window expired",
+    "customerEmail": "customer@example.com",
+    "metadata": {
+      "orderId": "12345"
+    }
+  }
+}
+```
 
-To ensure the integrity and authenticity of received webhooks, you should employ the following verification strategies:
+## Signature Verification
 
-1. **Signature Verification**: Verify the `X-ChainPal-Signature` header (if available) against your secret key to confirm the request originated from ChainPal.
-2. **Status Reconciliation**: Upon receiving a webhook, query the `Verify Payment Status` endpoint to confirm the current state of the transaction before taking action.
+Every webhook request includes signature headers that you should use to verify the request originated from ChainPal.
 
-_Note: Detailed signature verification guides are available in your dashboard security settings._
+### Headers
+
+| Header                 | Description                                      |
+| :--------------------- | :----------------------------------------------- |
+| `X-ChainPal-Signature` | HMAC-SHA256 signature in format `v1=<signature>` |
+| `X-ChainPal-Timestamp` | Unix timestamp when the webhook was sent         |
+
+### Verification Process
+
+1. Extract the timestamp from `X-ChainPal-Timestamp`
+2. Extract the signature from `X-ChainPal-Signature` (remove the `v1=` prefix)
+3. Create the signed content: `{timestamp}.{raw_request_body}`
+4. Compute HMAC-SHA256 of the signed content using your webhook signing secret
+5. Compare your computed signature with the received signature
+
+### Example: Node.js Verification
+
+```javascript
+const crypto = require("crypto");
+
+function verifyWebhookSignature(payload, signature, timestamp, secret) {
+  // Create the signed content
+  const signedContent = `${timestamp}.${payload}`;
+
+  // Compute HMAC-SHA256
+  const expectedSignature = crypto
+    .createHmac("sha256", secret)
+    .update(signedContent)
+    .digest("hex");
+
+  // Extract signature (remove 'v1=' prefix)
+  const receivedSignature = signature.replace("v1=", "");
+
+  // Compare signatures
+  return crypto.timingSafeEqual(
+    Buffer.from(expectedSignature),
+    Buffer.from(receivedSignature)
+  );
+}
+
+// Express.js middleware example
+app.post("/webhook", express.raw({ type: "application/json" }), (req, res) => {
+  const signature = req.headers["x-chainpal-signature"];
+  const timestamp = req.headers["x-chainpal-timestamp"];
+  const payload = req.body.toString();
+
+  const isValid = verifyWebhookSignature(
+    payload,
+    signature,
+    timestamp,
+    process.env.WEBHOOK_SIGNING_SECRET
+  );
+
+  if (!isValid) {
+    return res.status(401).send("Invalid signature");
+  }
+
+  // Process the webhook
+  const event = JSON.parse(payload);
+  console.log("Received event:", event.type);
+
+  res.status(200).send("OK");
+});
+```
+
+### Example: Python Verification
+
+```python
+import hmac
+import hashlib
+
+def verify_webhook_signature(payload: bytes, signature: str, timestamp: str, secret: str) -> bool:
+    # Create the signed content
+    signed_content = f"{timestamp}.{payload.decode('utf-8')}"
+
+    # Compute HMAC-SHA256
+    expected_signature = hmac.new(
+        secret.encode('utf-8'),
+        signed_content.encode('utf-8'),
+        hashlib.sha256
+    ).hexdigest()
+
+    # Extract signature (remove 'v1=' prefix)
+    received_signature = signature.replace('v1=', '')
+
+    # Compare signatures
+    return hmac.compare_digest(expected_signature, received_signature)
+```
+
+### Example: Go Verification
+
+```go
+package main
+
+import (
+    "crypto/hmac"
+    "crypto/sha256"
+    "encoding/hex"
+    "fmt"
+)
+
+func verifyWebhookSignature(payload []byte, signature, timestamp, secret string) bool {
+    // Create the signed content
+    signedContent := fmt.Sprintf("%s.%s", timestamp, string(payload))
+
+    // Compute HMAC-SHA256
+    mac := hmac.New(sha256.New, []byte(secret))
+    mac.Write([]byte(signedContent))
+    expectedSignature := hex.EncodeToString(mac.Sum(nil))
+
+    // Extract signature (remove 'v1=' prefix)
+    receivedSignature := signature[3:] // Remove "v1="
+
+    // Compare signatures
+    return hmac.Equal([]byte(expectedSignature), []byte(receivedSignature))
+}
+```
+
+## Best Practices
+
+### 1. Respond Quickly
+
+Return a 2xx response as quickly as possible. Process the webhook asynchronously if needed.
+
+```javascript
+app.post("/webhook", (req, res) => {
+  // Acknowledge receipt immediately
+  res.status(200).send("OK");
+
+  // Process asynchronously
+  processWebhookAsync(req.body);
+});
+```
+
+### 2. Handle Duplicates
+
+Use the `id` field to detect duplicate events. Store processed event IDs and skip duplicates.
+
+```javascript
+const processedEvents = new Set();
+
+function handleWebhook(event) {
+  if (processedEvents.has(event.id)) {
+    console.log("Duplicate event, skipping:", event.id);
+    return;
+  }
+
+  processedEvents.add(event.id);
+  // Process the event...
+}
+```
+
+### 3. Verify Before Acting
+
+Always verify the payment status via the API before fulfilling an order:
+
+```javascript
+async function handlePaymentCompleted(event) {
+  // Verify via API
+  const response = await fetch(
+    `https://api.chainpal.org/api/v1/payments/${event.data.paymentId}/verify`,
+    { headers: { Authorization: `Bearer ${SECRET_KEY}` } }
+  );
+
+  const verification = await response.json();
+
+  if (verification.data.paid) {
+    // Safe to fulfill the order
+    fulfillOrder(event.data.reference);
+  }
+}
+```
+
+### 4. Use HTTPS
+
+Always use HTTPS for your webhook endpoint to ensure the payload is encrypted in transit.
+
+### 5. Validate Timestamps
+
+Reject webhooks with timestamps that are too old (e.g., more than 5 minutes) to prevent replay attacks:
+
+```javascript
+function isTimestampValid(timestamp, toleranceSeconds = 300) {
+  const webhookTime = parseInt(timestamp, 10);
+  const currentTime = Math.floor(Date.now() / 1000);
+  return Math.abs(currentTime - webhookTime) <= toleranceSeconds;
+}
+```

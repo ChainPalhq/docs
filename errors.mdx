@@ -1,54 +1,57 @@
 ---
 title: "Errors"
+description: "Error codes, response formats, and troubleshooting"
 ---
-
-# Errors
 
 # Error Handling
 
-ChainPal leverages standard HTTP status codes to communicate the outcome of API requests. Errors are returned as a unified JSON object, providing both a machine-readable success flag and a human-readable message.
+The ChainPal API uses conventional HTTP status codes to indicate the success or failure of requests. All error responses follow a consistent JSON structure.
 
 ## HTTP Status Codes
 
-| Code  | Status                | Description                                                                         |
-| :---- | :-------------------- | :---------------------------------------------------------------------------------- |
-| `200` | OK                    | The request finished successfully.                                                  |
-| `400` | Bad Request           | The request was malformed, missing parameters, or contained invalid data.           |
-| `401` | Unauthorized          | Authentication failed. The API key is missing, invalid, or expired.                 |
-| `403` | Forbidden             | The authenticated client lacks permission to access the resource, or IP is blocked. |
-| `404` | Not Found             | The requested resource (e.g., specific Payment ID) could not be located.            |
-| `429` | Too Many Requests     | The client has exceeded the assigned rate limits.                                   |
-| `500` | Internal Server Error | An unexpected server-side error occurred. Please contact support.                   |
+| Code  | Status                | Description                                                |
+| :---- | :-------------------- | :--------------------------------------------------------- |
+| `200` | OK                    | Request succeeded                                          |
+| `400` | Bad Request           | Invalid request parameters or validation error             |
+| `401` | Unauthorized          | Missing or invalid API key                                 |
+| `403` | Forbidden             | Valid API key but access denied (e.g., IP not whitelisted) |
+| `404` | Not Found             | Requested resource doesn't exist                           |
+| `429` | Too Many Requests     | Rate limit exceeded                                        |
+| `500` | Internal Server Error | Server-side error                                          |
 
-## Error Response Structure
+## Error Response Format
 
-All error responses adhere to the following schema:
-
-```json
-{
-  "success": false,
-  "message": "Descriptive error message here",
-  "data": null
-}
-```
-
-| Field     | Type      | Description                                                 |
-| :-------- | :-------- | :---------------------------------------------------------- |
-| `success` | `boolean` | Always `false` for error responses.                         |
-| `message` | `string`  | A descriptive message detailing the cause of the error.     |
-| `data`    | `null`    | Reserved for additional context; typically null for errors. |
-
-### Example: Validation Error
+All error responses use this structure:
 
 ```json
 {
   "success": false,
-  "message": "the amount you provided is invalid, amount must be greater than zero, please try again",
+  "message": "Descriptive error message",
   "data": null
 }
 ```
 
-### Example: Authentication Error
+| Field     | Type      | Description                      |
+| :-------- | :-------- | :------------------------------- |
+| `success` | `boolean` | Always `false` for errors        |
+| `message` | `string`  | Human-readable error description |
+| `data`    | `null`    | Always `null` for errors         |
+
+## Common Errors
+
+### Authentication Errors (401)
+
+**Missing API Key**
+
+```json
+{
+  "success": false,
+  "message": "api key not provided, use the format 'Bearer <api key>'",
+  "data": null
+}
+```
+
+**Invalid API Key**
 
 ```json
 {
@@ -57,3 +60,244 @@ All error responses adhere to the following schema:
   "data": null
 }
 ```
+
+**Wrong Key Type**
+
+```json
+{
+  "success": false,
+  "message": "endpoint requires a secret key",
+  "data": null
+}
+```
+
+### Authorization Errors (403)
+
+**IP Not Whitelisted**
+
+```json
+{
+  "success": false,
+  "message": "access denied",
+  "data": null
+}
+```
+
+### Validation Errors (400)
+
+**Missing Required Field**
+
+```json
+{
+  "success": false,
+  "message": "Key: 'InitializePaymentDTO.Amount' Error:Field validation for 'Amount' failed on the 'required' tag",
+  "data": null
+}
+```
+
+**Invalid Email**
+
+```json
+{
+  "success": false,
+  "message": "Key: 'InitializePaymentDTO.CustomerEmail' Error:Field validation for 'CustomerEmail' failed on the 'email' tag",
+  "data": null
+}
+```
+
+**Amount Below Minimum**
+
+```json
+{
+  "success": false,
+  "message": "amount must be at least 1000.00 NGN",
+  "data": null
+}
+```
+
+**Amount Above Maximum**
+
+```json
+{
+  "success": false,
+  "message": "amount cannot exceed 1000000.00 NGN",
+  "data": null
+}
+```
+
+**Duplicate Reference**
+
+```json
+{
+  "success": false,
+  "message": "the reference you provided is already in use, please try again with a different reference",
+  "data": null
+}
+```
+
+**Invalid Reference Format**
+
+```json
+{
+  "success": false,
+  "message": "Key: 'InitializePaymentDTO.Reference' Error:Field validation for 'Reference' failed on the 'alphanum' tag",
+  "data": null
+}
+```
+
+**Unsupported Token/Network**
+
+```json
+{
+  "success": false,
+  "message": "pair not supported",
+  "data": null
+}
+```
+
+**Webhook Secret Required**
+
+```json
+{
+  "success": false,
+  "message": "You must generate a webhook signing secret before configuring webhook URLs",
+  "data": null
+}
+```
+
+### Not Found Errors (404)
+
+**Payment Not Found**
+
+```json
+{
+  "success": false,
+  "message": "payment not found",
+  "data": null
+}
+```
+
+**Invalid Payment ID Format**
+
+```json
+{
+  "success": false,
+  "message": "invalid payment ID format",
+  "data": null
+}
+```
+
+### Rate Limit Errors (429)
+
+**Too Many Requests**
+
+```json
+{
+  "success": false,
+  "message": "too many requests",
+  "data": null
+}
+```
+
+### Server Errors (500)
+
+**Generic Server Error**
+
+```json
+{
+  "success": false,
+  "message": "something went wrong, please try again",
+  "data": null
+}
+```
+
+## Handling Errors
+
+### Best Practices
+
+1. **Check the `success` field first**
+
+   ```javascript
+   const response = await fetch('/api/v1/payments', { ... });
+   const data = await response.json();
+
+   if (!data.success) {
+     console.error('API Error:', data.message);
+     // Handle error
+     return;
+   }
+
+   // Process successful response
+   ```
+
+2. **Handle specific status codes**
+
+   ```javascript
+   if (response.status === 401) {
+     // Re-authenticate or check API key
+   } else if (response.status === 429) {
+     // Wait and retry with exponential backoff
+   } else if (response.status >= 500) {
+     // Server error, retry later
+   }
+   ```
+
+3. **Implement retry logic for transient errors**
+
+   ```javascript
+   async function fetchWithRetry(url, options, maxRetries = 3) {
+     for (let i = 0; i < maxRetries; i++) {
+       const response = await fetch(url, options);
+
+       if (response.status === 429 || response.status >= 500) {
+         const delay = Math.pow(2, i) * 1000; // Exponential backoff
+         await new Promise((resolve) => setTimeout(resolve, delay));
+         continue;
+       }
+
+       return response;
+     }
+     throw new Error("Max retries exceeded");
+   }
+   ```
+
+4. **Log errors for debugging**
+   ```javascript
+   if (!data.success) {
+     console.error({
+       endpoint: "/api/v1/payments",
+       status: response.status,
+       message: data.message,
+       requestId: response.headers.get("x-request-id"),
+       timestamp: new Date().toISOString(),
+     });
+   }
+   ```
+
+## Validation Rules
+
+### Amount Field
+
+- Must be a positive number
+- Must meet minimum and maximum limits for the currency
+- See [Types & Enums](./types#transaction-limits) for limits
+
+### Reference Field
+
+- Optional (auto-generated if not provided)
+- 12-16 alphanumeric characters
+- Must be unique per merchant
+
+### Email Field
+
+- Must be a valid email format
+
+### URL Fields (callbackURL, failureURL)
+
+- Must be valid URLs
+- Must use HTTPS protocol
+
+### Token/Network
+
+- Must be a supported combination for your country
+- See [Types & Enums](./types#tokennetwork-availability-by-country)

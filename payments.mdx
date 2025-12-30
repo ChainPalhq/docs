@@ -1,123 +1,300 @@
 ---
 title: "Payments"
+description: "Create and manage payment sessions"
 ---
 
 # Payments API
 
-The Payments resource enables the programmatic creation and management of cryptocurrency payment sessions. It supports the full lifecycle of a payment, from initialization to status verification and reconciliation.
+The Payments API allows you to create, verify, and retrieve payment sessions programmatically.
 
-## Initialize Payment Session
+## Initialize Payment
 
-Creates a new payment intent and generates the necessary configuration for a checkout session. The returned `paymentURL` can be used to redirect users to a hosted payment page, or `paymentId` can be used to construct a custom checkout flow.
+Creates a new payment session and returns a hosted checkout URL.
 
-**Endpoint**: `POST /payments/initialize`
+<Note>
+  **Authentication**: Requires a **Public Key** (`cp_pk_test_` or `cp_pk_live_`)
+</Note>
 
-### Request Parameters
-
-| Parameter           | Type     | Required | Description                                                                                                 |
-| :------------------ | :------- | :------- | :---------------------------------------------------------------------------------------------------------- |
-| `amount`            | `number` | Yes      | The monetary value to be collected in the account's default currency.                                       |
-| `customerEmail`     | `string` | Yes      | The email address of the customer for notifications and receipts.                                           |
-| `customerFirstName` | `string` | No       | Customer's first name.                                                                                      |
-| `customerLastName`  | `string` | No       | Customer's last name.                                                                                       |
-| `reference`         | `string` | No       | A unique merchant-provided identifier for reconciliation. If omitted, the system generates one.             |
-| `callbackURL`       | `string` | No       | The URL to receive asynchronous webhook events for this specific payment. Overrides account-level settings. |
-| `failureURL`        | `string` | No       | The redirection URL for user navigation upon payment failure.                                               |
-| `metadata`          | `object` | No       | A set of key-value pairs (`string: string`) for storing custom structured data.                             |
-
-### Example Request Body
-
-```json
-{
-  "amount": 100.5,
-  "customerEmail": "customer@example.com",
-  "customerFirstName": "john",
-  "customerLastName": "doe",
-  "reference": "ORDER-12345",
-  "metadata": {
-    "productId": "prod_888"
-  }
-}
+```http
+POST /api/v1/payments
 ```
 
-### JSON Response
+### Request Body
+
+| Parameter           | Type      | Required | Description                                                                                          |
+| :------------------ | :-------- | :------- | :--------------------------------------------------------------------------------------------------- |
+| `amount`            | `number`  | Yes      | The payment amount in your account's local currency (or USD if `collectInUSD` is true)               |
+| `customerEmail`     | `string`  | Yes      | Customer's email address                                                                             |
+| `customerFirstName` | `string`  | No       | Customer's first name (2-50 characters)                                                              |
+| `customerLastName`  | `string`  | No       | Customer's last name (2-50 characters)                                                               |
+| `collectInUSD`      | `boolean` | No       | If `true`, the amount is treated as USD. Default: `false`                                            |
+| `reference`         | `string`  | No       | Your unique reference for this payment (12-16 alphanumeric characters). If omitted, we generate one. |
+| `callbackURL`       | `string`  | No       | URL to receive webhook notifications for this payment. Overrides account default.                    |
+| `failureURL`        | `string`  | No       | URL to redirect the customer on payment failure                                                      |
+| `metadata`          | `object`  | No       | Key-value pairs of custom data (string values only)                                                  |
+
+### Example Request
+
+```bash
+curl -X POST https://api.chainpal.org/api/v1/payments \
+  -H "Authorization: Bearer cp_pk_test_abc123" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "amount": 5000,
+    "customerEmail": "customer@example.com",
+    "customerFirstName": "John",
+    "customerLastName": "Doe",
+    "reference": "ORDER12345678",
+    "metadata": {
+      "orderId": "12345",
+      "productName": "Premium Plan"
+    }
+  }'
+```
+
+### Response
 
 ```json
 {
   "success": true,
   "message": "payment initialized successfully",
   "data": {
-    "paymentId": "60d5ecb8b5c9c62b3c1d4e5f",
-    "paymentURL": "https://pay.chainpal.org/c/abc12345"
+    "paymentId": "507f1f77bcf86cd799439011",
+    "paymentURL": "https://pay.chainpal.org/c/abc123xyz"
   }
 }
 ```
 
+### Response Fields
+
+| Field        | Type     | Description                                       |
+| :----------- | :------- | :------------------------------------------------ |
+| `paymentId`  | `string` | Unique identifier for this payment session        |
+| `paymentURL` | `string` | URL to redirect your customer to complete payment |
+
 ---
 
-## Verify Payment Status
+## Verify Payment
 
-Retrieves the real-time status of a payment session. This endpoint is designed for client-side polling or server-side verification.
+Retrieves the payment status and key details. Use this to verify that a payment has been completed.
 
-**Endpoint**: `GET /payments/:paymentId/verify`
+<Note>
+**Authentication**: Requires a **Secret Key** (`cp_sk_test_` or `cp_sk_live_`)
+
+**IP Whitelisting**: This endpoint respects IP whitelist configuration.
+
+</Note>
+
+```http
+GET /api/v1/payments/:paymentId/verify
+```
 
 ### Path Parameters
 
-| Parameter   | Type     | Required | Description                                           |
-| :---------- | :------- | :------- | :---------------------------------------------------- |
-| `paymentId` | `string` | Yes      | The unique system identifier for the payment session. |
+| Parameter   | Type     | Required | Description                                     |
+| :---------- | :------- | :------- | :---------------------------------------------- |
+| `paymentId` | `string` | Yes      | The payment ID returned from Initialize Payment |
 
-### JSON Response
+### Example Request
+
+```bash
+curl https://api.chainpal.org/api/v1/payments/507f1f77bcf86cd799439011/verify \
+  -H "Authorization: Bearer cp_sk_test_xyz789"
+```
+
+### Response
 
 ```json
 {
   "success": true,
   "message": "payment status fetched successfully",
   "data": {
-    "paymentReference": "ORDER-12345",
-    "paymentStatus": "completed",
-    "paymentAmount": "100.50",
-    "paymentCurrency": "USD"
+    "paymentId": "507f1f77bcf86cd799439011",
+    "paymentReference": "checkoutORDER12345678",
+    "paid": true,
+    "paidAt": "2024-01-15T14:30:00Z",
+    "paymentAmount": "5000.00",
+    "paymentCurrency": "NGN",
+    "token": "USDC",
+    "network": "base"
   }
 }
 ```
 
+### Response Fields
+
+| Field              | Type      | Description                                                      |
+| :----------------- | :-------- | :--------------------------------------------------------------- |
+| `paymentId`        | `string`  | The payment ID                                                   |
+| `paymentReference` | `string`  | Your reference (prefixed with `checkout`)                        |
+| `paid`             | `boolean` | Whether the payment has been received                            |
+| `paidAt`           | `string`  | ISO 8601 timestamp when payment was received (empty if not paid) |
+| `paymentAmount`    | `string`  | The fiat amount                                                  |
+| `paymentCurrency`  | `string`  | The fiat currency code (NGN, GHS, KES, ZAR, or USD)              |
+| `token`            | `string`  | The cryptocurrency used (USDT or USDC)                           |
+| `network`          | `string`  | The blockchain network used                                      |
+
 ---
 
-## Retrieve Payment Details
+## Get Payment Details
 
-Fetches the complete data model for a specific payment, including customer information, blockchain transaction hashes, and timestamps.
+Retrieves complete details of a payment including customer info, transaction hashes, and timestamps.
 
-**Endpoint**: `GET /payments/:paymentId`
+<Note>
+**Authentication**: Requires a **Secret Key** (`cp_sk_test_` or `cp_sk_live_`)
+
+**IP Whitelisting**: This endpoint respects IP whitelist configuration.
+
+</Note>
+
+```http
+GET /api/v1/payments/:paymentId
+```
 
 ### Path Parameters
 
-| Parameter   | Type     | Required | Description                                           |
-| :---------- | :------- | :------- | :---------------------------------------------------- |
-| `paymentId` | `string` | Yes      | The unique system identifier for the payment session. |
+| Parameter   | Type     | Required | Description    |
+| :---------- | :------- | :------- | :------------- |
+| `paymentId` | `string` | Yes      | The payment ID |
 
-### JSON Response
+### Example Request
+
+```bash
+curl https://api.chainpal.org/api/v1/payments/507f1f77bcf86cd799439011 \
+  -H "Authorization: Bearer cp_sk_test_xyz789"
+```
+
+### Response
 
 ```json
 {
   "success": true,
   "message": "payment fetched successfully",
   "data": {
-    "id": "60d5ecb8b5c9c62b3c1d4e5f",
-    "reference": "ORDER-12345",
-    "fiatAmount": "100.50",
-    "currency": "USD",
+    "id": "507f1f77bcf86cd799439011",
+    "businessId": "507f1f77bcf86cd799439022",
+    "userId": "507f1f77bcf86cd799439033",
+    "environment": "test",
+    "payCode": "abc123xyz",
+    "fiatAmount": "5000.00",
+    "collectedFiatAmount": "5000.00",
+    "currency": "NGN",
     "status": "completed",
+    "reference": "checkoutORDER12345678",
+    "paymentURL": "https://pay.chainpal.org/c/abc123xyz",
+    "callbackURL": "https://yoursite.com/webhook",
     "customerInfo": {
       "email": "customer@example.com",
       "firstName": "John",
       "lastName": "Doe"
     },
-    "token": "USDT",
-    "network": "BSC",
-    "txHash": "0x123...",
-    "createdAt": "2023-01-01T12:00:00Z",
-    "completedAt": "2023-01-01T12:05:00Z"
+    "metadata": {
+      "orderId": "12345"
+    },
+    "cryptoAmount": "3.50",
+    "collectedCryptoAmount": "3.50",
+    "token": "USDC",
+    "network": "base",
+    "txHash": "0x123abc...",
+    "primaryAddress": "0x456def...",
+    "createdAt": "2024-01-15T14:00:00Z",
+    "updatedAt": "2024-01-15T14:30:00Z",
+    "completedAt": "2024-01-15T14:30:00Z",
+    "expiresAt": "2024-01-15T15:00:00Z"
+  }
+}
+```
+
+### Response Fields
+
+| Field                   | Type     | Description                                   |
+| :---------------------- | :------- | :-------------------------------------------- |
+| `id`                    | `string` | Unique payment identifier                     |
+| `businessId`            | `string` | Your business ID                              |
+| `userId`                | `string` | Your user ID                                  |
+| `environment`           | `string` | `test` or `live`                              |
+| `payCode`               | `string` | Short code used in the checkout URL           |
+| `fiatAmount`            | `string` | Original requested fiat amount                |
+| `collectedFiatAmount`   | `string` | Actual fiat amount collected after conversion |
+| `currency`              | `string` | Fiat currency code                            |
+| `status`                | `string` | Payment status (see [Types](./types))         |
+| `reference`             | `string` | Your reference (prefixed with `checkout`)     |
+| `paymentURL`            | `string` | Hosted checkout URL                           |
+| `callbackURL`           | `string` | Webhook URL for this payment                  |
+| `failureURL`            | `string` | Failure redirect URL                          |
+| `customerInfo`          | `object` | Customer details (email, firstName, lastName) |
+| `metadata`              | `object` | Your custom key-value data                    |
+| `cryptoAmount`          | `string` | Expected crypto amount                        |
+| `collectedCryptoAmount` | `string` | Actual crypto amount received                 |
+| `surplusAmount`         | `string` | Overpayment amount (if any)                   |
+| `deficitAmount`         | `string` | Underpayment amount (if any)                  |
+| `token`                 | `string` | Cryptocurrency token (USDT or USDC)           |
+| `network`               | `string` | Blockchain network                            |
+| `txHash`                | `string` | Blockchain transaction hash                   |
+| `primaryAddress`        | `string` | Deposit address used                          |
+| `totalSentAmount`       | `string` | Amount sent to exchange                       |
+| `merchantFee`           | `string` | Fee charged                                   |
+| `errorMessage`          | `string` | Error description if failed                   |
+| `createdAt`             | `string` | ISO 8601 creation timestamp                   |
+| `updatedAt`             | `string` | ISO 8601 last update timestamp                |
+| `completedAt`           | `string` | ISO 8601 completion timestamp                 |
+| `expiresAt`             | `string` | ISO 8601 expiration timestamp                 |
+
+---
+
+## List Payments
+
+Retrieves a paginated list of your payments.
+
+<Note>
+**Authentication**: Requires a **Secret Key** (`cp_sk_test_` or `cp_sk_live_`)
+
+**IP Whitelisting**: This endpoint respects IP whitelist configuration.
+
+</Note>
+
+```http
+GET /api/v1/payments
+```
+
+### Query Parameters
+
+| Parameter   | Type      | Default      | Description                             |
+| :---------- | :-------- | :----------- | :-------------------------------------- |
+| `page`      | `integer` | `1`          | Page number                             |
+| `pageSize`  | `integer` | `20`         | Number of results per page              |
+| `sortBy`    | `string`  | `created_at` | Sort field (`created_at` or `status`)   |
+| `sortOrder` | `string`  | `desc`       | Sort order (`asc` or `desc`)            |
+| `status`    | `string`  | -            | Filter by status (see [Types](./types)) |
+
+### Example Request
+
+```bash
+curl "https://api.chainpal.org/api/v1/payments?page=1&pageSize=10&status=completed" \
+  -H "Authorization: Bearer cp_sk_test_xyz789"
+```
+
+### Response
+
+```json
+{
+  "success": true,
+  "message": "payments fetched successfully",
+  "data": {
+    "items": [
+      {
+        "_id": "507f1f77bcf86cd799439011",
+        "reference": "checkoutORDER12345678",
+        "fiatAmount": "5000.00",
+        "currency": "NGN",
+        "status": "completed",
+        "created_at": "2024-01-15T14:00:00Z"
+      }
+    ],
+    "page": 1,
+    "pageSize": 10,
+    "totalItems": 1,
+    "totalPages": 1
   }
 }
 ```

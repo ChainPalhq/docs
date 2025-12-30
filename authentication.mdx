@@ -1,50 +1,102 @@
 ---
 title: "Authentication"
+description: "API key types and authentication methods"
 ---
 
 # Authentication
 
-The ChainPal API relies on **Bearer Token Authentication** to secure access to resources. Every API request must include a valid API key in the `Authorization` header. You can manage your API credentials within the [Developer Dashboard](https://dashboard.chainpal.org/developers).
+The ChainPal API uses API keys for authentication. All API requests must include a valid API key in the `Authorization` header.
 
-## API Keys
+## API Key Types
 
-ChainPal provides distinct API keys for environment isolation (Live vs. Test) and client-side vs. server-side usage.
+ChainPal provides two types of API keys for different use cases:
 
-### Key Types
+### Public Keys
 
-- **`Public Keys (pk)`**: Designed for client-side integrations (e.g., frontend widgets). These keys have restricted permissions limited to non-sensitive operations.
-- **`Secret Keys (sk)`**: Designed for server-side integrations. These keys grant full access to your account and **must never be exposed in client-side code**.
+- **Prefix**: `cp_pk_test_` or `cp_pk_live_`
+- **Use Case**: Client-side integrations (e.g., initializing payments from your frontend)
+- **Permissions**: Limited to creating payments and getting quotes
+- **Endpoints**: `POST /payments`, `POST /payments/quote`
 
-### Key Prefixes
+### Secret Keys
 
-All API keys are prefixed to indicate their environment and type:
+- **Prefix**: `cp_sk_test_` or `cp_sk_live_`
+- **Use Case**: Server-side integrations only
+- **Permissions**: Full API access including payment verification and listing
+- **Endpoints**: All endpoints, including `GET /payments`, `GET /payments/:paymentId`, `GET /payments/:paymentId/verify`
+
+<Warning>
+  **Never expose your Secret Keys in client-side code**. Secret keys should only
+  be used in server-to-server communications.
+</Warning>
+
+## Key Prefixes
 
 | Environment | Key Type | Prefix        |
 | :---------- | :------- | :------------ |
-| **Live**    | Public   | `cp_pk_live_` |
-| **Live**    | Secret   | `cp_sk_live_` |
-| **Test**    | Public   | `cp_pk_test_` |
-| **Test**    | Secret   | `cp_sk_test_` |
+| Test        | Public   | `cp_pk_test_` |
+| Test        | Secret   | `cp_sk_test_` |
+| Live        | Public   | `cp_pk_live_` |
+| Live        | Secret   | `cp_sk_live_` |
 
 ## Authorization Header
 
-Clients must send the API key in the HTTP `Authorization` header using the standardized `Bearer` scheme:
+Include your API key in the `Authorization` header using the Bearer scheme:
+
+```http
+Authorization: Bearer cp_pk_test_your_api_key
+```
+
+## Example Requests
+
+### Using a Public Key (Initialize Payment)
 
 ```bash
-Authorization: Bearer cp_sk_test_...
-```
-
-### Example Request
-
-``` expandable
-curl https://api.chainpal.org/api/v1/payments/initialize \
-  -H "Authorization: Bearer cp_sk_test_12345abcdef" \
+curl -X POST https://api.chainpal.org/api/v1/payments \
+  -H "Authorization: Bearer cp_pk_test_abc123" \
   -H "Content-Type: application/json" \
-  -d '{ ... }'
+  -d '{
+    "amount": 5000,
+    "customerEmail": "customer@example.com"
+  }'
 ```
 
-## Security Controls
+### Using a Secret Key (Verify Payment)
 
-### IP Whitelisting
+```bash
+curl https://api.chainpal.org/api/v1/payments/507f1f77bcf86cd799439011/verify \
+  -H "Authorization: Bearer cp_sk_test_xyz789"
+```
 
-To restrict access to your API credentials, you may configure **IP Whitelisting** in your dashboard settings. When enabled, requests originating from unauthorized IP addresses will be rejected with a `403 Forbidden` response, providing an additional layer of security for your integration.
+## IP Whitelisting
+
+For enhanced security, you can configure IP whitelisting in your dashboard. When enabled:
+
+- Only requests from whitelisted IP addresses will be accepted for Secret Key endpoints
+- Requests from non-whitelisted IPs will receive a `403 Forbidden` response
+- You can whitelist up to 3 IP addresses
+
+IP whitelisting applies to the following endpoints:
+
+- `GET /payments/:paymentId/verify`
+- `GET /payments/:paymentId`
+- `GET /payments`
+
+## Rate Limiting
+
+API requests are rate-limited to prevent abuse:
+
+| Key Type   | Default Rate Limit      |
+| :--------- | :---------------------- |
+| Public Key | 30 requests per minute  |
+| Secret Key | 100 requests per minute |
+
+When you exceed the rate limit, you'll receive a `429 Too Many Requests` response.
+
+## Authentication Errors
+
+| Status Code | Message                | Description                       |
+| :---------- | :--------------------- | :-------------------------------- |
+| `401`       | `api key is invalid`   | The provided API key is not valid |
+| `401`       | `api key not provided` | No Authorization header was sent  |
+| `403`       | `access denied`        | IP address not in whitelist       |
