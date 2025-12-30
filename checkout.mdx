@@ -1,18 +1,42 @@
 ---
 title: "Checkout"
-description: "Hosted checkout page endpoints for customer-facing payment flows"
+description: "How the hosted checkout page works"
 ---
 
-# Checkout API
+# Checkout Flow
 
-The Checkout API provides endpoints for the customer-facing payment flow. These endpoints power the hosted checkout page at `pay.chainpal.org`.
+This page documents how the hosted checkout page at `pay.chainpal.org` works. Understanding this flow helps you implement proper callback handling and user experience.
 
-<Note>
-  These endpoints are used by the hosted checkout page. You typically don't need
-  to call them directly unless you're building a custom checkout experience.
-</Note>
+<Warning>
+**Internal API - Not Publicly Available**
 
-## Get Checkout Data
+The endpoints described on this page are internal APIs that power ChainPal's hosted checkout page. They are **not part of the Developer API** and are not available for direct integration.
+
+To accept payments, use the [Payments API](./payments) to create a payment session and redirect customers to the returned `paymentURL`.
+
+</Warning>
+
+## How Hosted Checkout Works
+
+When you create a payment using the [Payments API](./payments), you receive a `paymentURL` like:
+
+```
+https://pay.chainpal.org/c/abc123xyz456
+```
+
+When customers visit this URL, the hosted checkout page:
+
+1. Fetches payment details and available token/network options
+2. Displays your business branding and the payment amount
+3. Allows the customer to select their preferred cryptocurrency and network
+4. Generates a unique deposit address for the transaction
+5. Shows the QR code and address for payment
+6. Polls for payment confirmation
+7. Redirects to your `callbackURL` on success or `failureURL` on failure
+
+---
+
+## Internal Endpoints (Reference Only)
 
 Retrieves the payment configuration for a checkout session. This includes supported tokens/networks, amount limits, and business branding.
 

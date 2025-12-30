@@ -18,8 +18,12 @@
             "pages": ["index", "authentication", "errors", "types"]
           },
           {
-            "group": "Endpoints",
-            "pages": ["payments", "quote", "checkout", "webhooks"]
+            "group": "API Endpoints",
+            "pages": ["payments", "quote", "webhooks"]
+          },
+          {
+            "group": "Concepts",
+            "pages": ["checkout"]
           }
         ]
       }
