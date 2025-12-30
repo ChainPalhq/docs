@@ -21,17 +21,17 @@ POST /api/v1/payments
 
 ### Request Body
 
-| Parameter           | Type      | Required | Description                                                                                          |
-| :------------------ | :-------- | :------- | :--------------------------------------------------------------------------------------------------- |
-| `amount`            | `number`  | Yes      | The payment amount in your account's local currency (or USD if `collectInUSD` is true)               |
-| `customerEmail`     | `string`  | Yes      | Customer's email address                                                                             |
-| `customerFirstName` | `string`  | No       | Customer's first name (2-50 characters)                                                              |
-| `customerLastName`  | `string`  | No       | Customer's last name (2-50 characters)                                                               |
-| `collectInUSD`      | `boolean` | No       | If `true`, the amount is treated as USD. Default: `false`                                            |
-| `reference`         | `string`  | No       | Your unique reference for this payment (12-16 alphanumeric characters). If omitted, we generate one. |
-| `callbackURL`       | `string`  | No       | URL to receive webhook notifications for this payment. Overrides account default.                    |
-| `failureURL`        | `string`  | No       | URL to redirect the customer on payment failure                                                      |
-| `metadata`          | `object`  | No       | Key-value pairs of custom data (string values only)                                                  |
+| Parameter           | Type      | Required | Description                                                                                                   |
+| :------------------ | :-------- | :------- | :------------------------------------------------------------------------------------------------------------ |
+| `amount`            | `number`  | Yes      | The payment amount in your account's local currency (or USD if `collectInUSD` is true)                        |
+| `customerEmail`     | `string`  | Yes      | Customer's email address                                                                                      |
+| `customerFirstName` | `string`  | No       | Customer's first name (2-50 characters)                                                                       |
+| `customerLastName`  | `string`  | No       | Customer's last name (2-50 characters)                                                                        |
+| `collectInUSD`      | `boolean` | No       | If `true`, the amount is treated as USD. Default: `false`                                                     |
+| `reference`         | `string`  | No       | Your unique reference for this payment (12-16 alphanumeric characters). If omitted, we generate one.          |
+| `callbackURL`       | `string`  | No       | URL to redirect the customer after successful payment. Payment ID and reference are appended as query params. |
+| `failureURL`        | `string`  | No       | URL to redirect the customer on payment failure or expiration                                                 |
+| `metadata`          | `object`  | No       | Key-value pairs of custom data (string values only)                                                           |
 
 ### Example Request
 

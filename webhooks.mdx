@@ -22,6 +22,16 @@ You can set separate webhook URLs for:
   ChainPal.
 </Note>
 
+<Info>
+**Webhook URLs vs Callback URLs**
+
+- **Webhook URL**: A server-to-server endpoint that receives event notifications (POST requests) from ChainPal. Used for backend processing.
+- **Callback URL**: A frontend redirect URL where customers are sent after payment. The payment ID and reference are appended as query parameters. Used for displaying success/failure pages to customers.
+
+Configure Webhook URLs in the dashboard. Callback URLs can be set per-payment when initializing a payment.
+
+</Info>
+
 ## Webhook Delivery
 
 When an event occurs, ChainPal sends an HTTP POST request to your configured webhook URL with:
