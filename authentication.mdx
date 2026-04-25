@@ -1,40 +1,65 @@
-| Field | Type | Description |
-| --- | --- | --- |
-| id | string | Unique payment identifier |
-| businessId | string | Your business ID |
-| userId | string | Your user ID |
-| environment | string | test or live |
-| payCode | string | Short code used in the checkout URL |
-| fiatAmount | string | Original requested fiat amount |
-| collectedFiatAmount | string | Actual fiat amount collected after conversion |
-| currency | string | Fiat currency code |
-| status | string | Payment status (see \[Types\](./types)) |
-| reference | string | Internal exchange-facing reference (may be regenerated on order expiration) |
-| clientReference | string | Your reference (as passed during payment creation, never mutated) |
-| paymentURL | string | Hosted checkout URL |
-| callbackURL | string | Webhook URL for this payment |
-| failureURL | string | Failure redirect URL |
-| customerInfo | object | Customer details (email, firstName, lastName) |
-| metadata | object | Your custom key-value data |
-| cryptoAmount | string | Expected crypto amount |
-| collectedCryptoAmount | string | Actual crypto amount received |
-| surplusAmount | string | Overpayment amount (if any) |
-| deficitAmount | string | Underpayment amount (if any) |
-| token | string | Cryptocurrency token (USDT or USDC) |
-| network | string | Blockchain network |
-| txHash | string | Blockchain transaction hash |
-| primaryAddress | string | Deposit address used |
-| totalSentAmount | string | Amount sent to exchange |
-| merchantFee | string | Fee charged |
-| errorMessage | string | Error description if failed |
-| createdAt | string | ISO 8601 creation timestamp |
-| updatedAt | string | ISO 8601 last update timestamp |
-| completedAt | string | ISO 8601 completion timestamp |
-| expiresAt | string | ISO 8601 expiration timestamp |
-| Parameter | Type | Default |
-| :---------- | :-------- | :----------- |
-| page | integer | 1 |
-| pageSize | integer | 20 |
-| sortBy | string | created\_at |
-| sortOrder | string | desc |
-| status | string | - |
+| Field                   | Type     | Description                                   |
+| :---------------------- | :------- | :-------------------------------------------- |
+| id                    | string | Unique payment identifier                     |
+| businessId            | string | Your business ID                              |
+| userId                | string | Your user ID                                  |
+| environment           | string | test or live                              |
+| payCode               | string | Short code used in the checkout URL           |
+| fiatAmount            | string | Original requested fiat amount                |
+| collectedFiatAmount   | string | Actual fiat amount collected after conversion |
+| currency              | string | Fiat currency code                            |
+| status                | string | Payment status (see [Types](./types))         |
+| reference             | string  | Internal exchange-facing reference (may be regenerated on order expiration)     |
+| clientReference       | string  | Your reference (as passed during payment creation, never mutated)             |
+| paymentURL            | string | Hosted checkout URL                           |
+| callbackURL           | string | Webhook URL for this payment                  |
+| failureURL            | string | Failure redirect URL                          |
+| customerInfo          | object | Customer details (email, firstName, lastName) |
+| metadata              | object | Your custom key-value data                    |
+| cryptoAmount          | string | Expected crypto amount                        |
+| collectedCryptoAmount | string | Actual crypto amount received                 |
+| surplusAmount         | string | Overpayment amount (if any)                   |
+| deficitAmount         | string | Underpayment amount (if any)                  |
+| token                 | string | Cryptocurrency token (USDT or USDC)           |
+| network               | string | Blockchain network                            |
+| txHash                | string | Blockchain transaction hash                   |
+| primaryAddress        | string | Deposit address used                          |
+| totalSentAmount       | string | Amount sent to exchange                       |
+| merchantFee           | string | Fee charged                                   |
+| errorMessage          | string | Error description if failed                   |
+| createdAt             | string | ISO 8601 creation timestamp                   |
+| updatedAt             | string | ISO 8601 last update timestamp                |
+| completedAt           | string | ISO 8601 completion timestamp                 |
+| expiresAt             | string | ISO 8601 expiration timestamp                 |
+
+---
+
+## List Payments
+
+Retrieves a paginated list of your payments.
+
+<Note>
+Authentication: Requires a Secret Key (cp_sk_test_ or cp_sk_live_)
+
+IP Whitelisting: This endpoint respects IP whitelist configuration.
+
+</Note>
+
+GET /api/v1/payments
+
+### Query Parameters
+
+| Parameter   | Type      | Default      | Description                             |
+| :---------- | :-------- | :----------- | :-------------------------------------- |
+| page      | integer | 1          | Page number                             |
+| pageSize  | integer | 20         | Number of results per page              |
+| sortBy    | string  | created_at | Sort field (created_at or status)   |
+| sortOrder | string  | desc       | Sort order (asc or desc)            |
+| status    | string  | -            | Filter by status (see [Types](./types)) |
+
+### Example Request
+
+curl "https://api.chainpal.org/api/v1/payments?page=1&pageSize=10&status=completed" \
+  -H "Authorization: Bearer cp_sk_test_xyz789"
+
+### Response
