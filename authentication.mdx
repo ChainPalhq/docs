@@ -5,7 +5,7 @@ description: "API key types and authentication methods"
 
 # Authentication
 
-The ChainPal API uses API keys for authentication. All API requests must include a valid API key in the Authorization header.
+The ChainPal API uses API keys for authentication. All API requests must include a valid API key in the `Authorization` header.
 
 ## API Key Types
 
@@ -13,20 +13,20 @@ ChainPal provides two types of API keys for different use cases:
 
 ### Public Keys
 
-- Prefix: cp_pk_test_ or cp_pk_live_
-- Use Case: Client-side integrations (e.g., initializing payments from your frontend)
-- Permissions: Limited to creating payments and getting quotes
-- Endpoints: POST /payments, POST /payments/quote
+- **Prefix**: `cp_pk_test_` or `cp_pk_live_`
+- **Use Case**: Client-side integrations (e.g., initializing payments from your frontend)
+- **Permissions**: Limited to creating payments and getting quotes
+- **Endpoints**: `POST /payments`, `POST /payments/quote`
 
 ### Secret Keys
 
-- Prefix: cp_sk_test_ or cp_sk_live_
-- Use Case: Server-side integrations only
-- Permissions: Full API access including payment verification and listing
-- Endpoints: All endpoints, including GET /payments, GET /payments/:paymentId, GET /payments/:paymentId/verify
+- **Prefix**: `cp_sk_test_` or `cp_sk_live_`
+- **Use Case**: Server-side integrations only
+- **Permissions**: Full API access including payment verification and listing
+- **Endpoints**: All endpoints, including `GET /payments`, `GET /payments/:paymentId`, `GET /payments/:paymentId/verify`
 
 <Warning>
-  Never expose your Secret Keys in client-side code. Secret keys should only
+  **Never expose your Secret Keys in client-side code**. Secret keys should only
   be used in server-to-server communications.
 </Warning>
 
@@ -34,16 +34,18 @@ ChainPal provides two types of API keys for different use cases:
 
 | Environment | Key Type | Prefix        |
 | :---------- | :------- | :------------ |
-| Test        | Public   | cp_pk_test_ |
-| Test        | Secret   | cp_sk_test_ |
-| Live        | Public   | cp_pk_live_ |
-| Live        | Secret   | cp_sk_live_ |
+| Test        | Public   | `cp_pk_test_` |
+| Test        | Secret   | `cp_sk_test_` |
+| Live        | Public   | `cp_pk_live_` |
+| Live        | Secret   | `cp_sk_live_` |
 
 ## Authorization Header
 
-Include your API key in the Authorization header using the Bearer scheme:
+Include your API key in the `Authorization` header using the Bearer scheme:
 
+```http
 Authorization: Bearer cp_pk_test_your_api_key
+```
 
 ## Example Requests
 
@@ -54,9 +56,9 @@ curl -X POST https://api.chainpal.org/api/v1/payments \
   -H "Authorization: Bearer cp_pk_test_abc123" \
   -H "Content-Type: application/json" \
   -d '{
-      "amount": 5000,
-      "customerEmail": "customer@example.com"
-    }'
+    "amount": 5000,
+    "customerEmail": "customer@example.com"
+  }'
 ```
 
 ### Using a Secret Key (Verify Payment)
@@ -71,15 +73,15 @@ curl https://api.chainpal.org/api/v1/payments/507f1f77bcf86cd799439011/verify \
 For enhanced security, you can configure IP whitelisting in your dashboard. When enabled:
 
 - Only requests from whitelisted IP addresses will be accepted for Secret Key endpoints
-- Requests from non-whitelisted IPs will receive a 403 Forbidden response
+- Requests from non-whitelisted IPs will receive a `403 Forbidden` response
 - You can whitelist up to 3 IP addresses
 
 IP whitelisting applies to the following endpoints:
 
-- GET /payments/:paymentId/verify
-- GET /payments/reference/:reference/verify
-- GET /payments/:paymentId
-- GET /payments
+- `GET /payments/:paymentId/verify`
+- `GET /payments/reference/:reference/verify`
+- `GET /payments/:paymentId`
+- `GET /payments`
 
 ## Rate Limiting
 
@@ -90,12 +92,12 @@ API requests are rate-limited to prevent abuse:
 | Public Key | 30 requests per minute  |
 | Secret Key | 100 requests per minute |
 
-When you exceed the rate limit, you'll receive a 429 Too Many Requests response.
+When you exceed the rate limit, you'll receive a `429 Too Many Requests` response.
 
 ## Authentication Errors
 
 | Status Code | Message                | Description                       |
 | :---------- | :--------------------- | :-------------------------------- |
-| 401       | api key is invalid   | The provided API key is not valid |
-| 401       | api key not provided | No Authorization header was sent  |
-| 403       | access denied        | IP address not in whitelist       |
+| `401`       | `api key is invalid`   | The provided API key is not valid |
+| `401`       | `api key not provided` | No Authorization header was sent  |
+| `403`       | `access denied`        | IP address not in whitelist       |

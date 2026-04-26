@@ -85,9 +85,38 @@ All webhook events follow this structure:
 
 ## Event Types
 
+### payment.received
+
+Sent immediately when the initial cryptocurrency transaction is detected on the blockchain, before fiat processing completes.
+
+```json
+{
+  "id": "evt_xyz789abc",
+  "type": "payment.received",
+  "environment": "live",
+  "createdAt": "2024-01-15T14:20:00Z",
+  "data": {
+    "paymentId": "507f1f77bcf86cd799439011",
+    "reference": "ORDER12345678",
+    "clientReference": "ORDER12345678",
+    "fiatAmount": "5000.00",
+    "currency": "NGN",
+    "cryptoAmount": "3.029024",
+    "token": "USDC",
+    "network": "base",
+    "txHash": "0x123abc...",
+    "customerEmail": "customer@example.com",
+    "status": "processing",
+    "metadata": {
+      "orderId": "12345"
+    }
+  }
+}
+```
+
 ### payment.completed
 
-Sent when a payment has been successfully received and processed.
+Sent when a payment has been successfully received and processed into fiat.
 
 ```json
 {
@@ -97,7 +126,8 @@ Sent when a payment has been successfully received and processed.
   "createdAt": "2024-01-15T14:30:00Z",
   "data": {
     "paymentId": "507f1f77bcf86cd799439011",
-    "reference": "checkoutORDER12345678",
+    "reference": "ORDER12345678",
+    "clientReference": "ORDER12345678",
     "fiatAmount": "5000.00",
     "currency": "NGN",
     "cryptoAmount": "3.029024",
@@ -105,6 +135,8 @@ Sent when a payment has been successfully received and processed.
     "network": "base",
     "txHash": "0x123abc...",
     "customerEmail": "customer@example.com",
+    "status": "completed",
+    "completedAt": "2024-01-15T14:30:00Z",
     "metadata": {
       "orderId": "12345"
     }
@@ -125,6 +157,7 @@ Sent when a payment has failed (e.g., expired, underpaid, or processing error).
   "data": {
     "paymentId": "507f1f77bcf86cd799439011",
     "reference": "checkoutORDER12345678",
+    "clientReference": "ORDER12345678",
     "fiatAmount": "5000.00",
     "currency": "NGN",
     "status": "expired",
