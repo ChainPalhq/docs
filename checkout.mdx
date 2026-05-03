@@ -66,7 +66,7 @@ curl https://api.chainpal.org/checkout/abc123xyz456
     "id": "507f1f77bcf86cd799439011",
     "customerEmail": "customer@example.com",
     "memo": "",
-    "paymentReference": "checkoutORDER12345",
+    "clientReference": "ORDER12345678",
     "paymentStatus": "pending",
     "paymentAmount": "5000.00",
     "paymentCurrency": "NGN",
@@ -78,6 +78,8 @@ curl https://api.chainpal.org/checkout/abc123xyz456
     "businessName": "Acme Corp",
     "logoURL": "https://example.com/logo.png",
     "status": "pending",
+    "callbackURL": "https://yoursite.com/return",
+    "failureURL": "https://yoursite.com/cancel",
     "environment": "test",
     "minimumOutputAmount": 1000,
     "maximumOutputAmount": 1000000,
@@ -95,7 +97,7 @@ curl https://api.chainpal.org/checkout/abc123xyz456
 | :-------------------------- | :------- | :------------------------------------------ |
 | `id`                        | `string` | Payment ID                                  |
 | `customerEmail`             | `string` | Customer's email                            |
-| `paymentReference`          | `string` | Payment reference                           |
+| `clientReference`           | `string` | Your reference (or one we generated for you if you didn't pass one) |
 | `paymentStatus`             | `string` | Current status                              |
 | `paymentAmount`             | `string` | Fiat amount to be paid                      |
 | `paymentCurrency`           | `string` | Fiat currency (NGN, GHS, KES, ZAR, or USD)  |
@@ -104,6 +106,8 @@ curl https://api.chainpal.org/checkout/abc123xyz456
 | `businessName`              | `string` | Merchant's business name                    |
 | `logoURL`                   | `string` | URL to merchant's logo                      |
 | `status`                    | `string` | Payment status                              |
+| `callbackURL`               | `string` | Success redirect URL                        |
+| `failureURL`                | `string` | Failure redirect URL                        |
 | `environment`               | `string` | `test` or `live`                            |
 | `minimumOutputAmount`       | `number` | Minimum fiat amount allowed                 |
 | `maximumOutputAmount`       | `number` | Maximum fiat amount allowed                 |

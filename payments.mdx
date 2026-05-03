@@ -29,7 +29,7 @@ POST /api/v1/payments
 | `customerLastName`  | `string`  | No       | Customer's last name (2-50 characters)                                                                        |
 | `collectInUSD`      | `boolean` | No       | If `true`, the amount is treated as USD. Default: `false`                                                     |
 | `reference`         | `string`  | No       | Your unique reference for this payment (8-64 alphanumeric characters). If omitted, we generate one.          |
-| `callbackURL`       | `string`  | No       | URL to redirect the customer after successful payment. Payment ID and reference are appended as query params. |
+| `callbackURL`       | `string`  | No       | URL to redirect the customer after successful payment. `paymentId` (ObjectID) and `reference` (your `clientReference`) are appended as query params. |
 | `failureURL`        | `string`  | No       | URL to redirect the customer on payment failure or expiration                                                 |
 | `metadata`          | `object`  | No       | Key-value pairs of custom data (string values only)                                                           |
 
@@ -130,7 +130,7 @@ curl https://api.chainpal.org/api/v1/payments/507f1f77bcf86cd799439011/verify \
 | `paymentId`        | `string`  | The payment ID                                                   |
 | `paymentReference` | `string`  | Your reference (as passed during payment creation, never mutated)                    |
 | `paid`             | `boolean` | Whether the payment has been received                            |
-| `paidAt`           | `string`  | ISO 8601 timestamp when payment was received (empty if not paid) |
+| `paidAt`           | `string`  | ISO 8601 timestamp when payment was received. Omitted from the response when the payment hasn't been received yet. |
 | `status`           | `string`  | The current status of the payment (e.g., `processing`, `completed`) |
 | `paymentAmount`    | `string`  | The fiat amount                                                  |
 | `cryptoAmount`     | `string`  | The actual crypto amount collected                               |
@@ -218,10 +218,10 @@ curl https://api.chainpal.org/api/v1/payments/507f1f77bcf86cd799439011 \
     "collectedFiatAmount": "5000.00",
     "currency": "NGN",
     "status": "completed",
-    "reference": "ORDER12345678",
     "clientReference": "ORDER12345678",
     "paymentURL": "https://pay.chainpal.org/c/abc123xyz",
     "callbackURL": "https://yoursite.com/webhook",
+    "failureURL": "https://yoursite.com/cancel",
     "customerInfo": {
       "email": "customer@example.com",
       "firstName": "John",
@@ -257,8 +257,7 @@ curl https://api.chainpal.org/api/v1/payments/507f1f77bcf86cd799439011 \
 | `collectedFiatAmount`   | `string` | Actual fiat amount collected after conversion |
 | `currency`              | `string` | Fiat currency code                            |
 | `status`                | `string` | Payment status (see [Types](./types))         |
-| `reference`             | `string`  | Internal exchange-facing reference (may be regenerated on order expiration)     |
-| `clientReference`       | `string`  | Your reference (as passed during payment creation, never mutated)             |
+| `clientReference`       | `string` | Your reference (as passed during payment creation, never mutated). If you didn't pass one, this is auto-populated at creation time. |
 | `paymentURL`            | `string` | Hosted checkout URL                           |
 | `callbackURL`           | `string` | Webhook URL for this payment                  |
 | `failureURL`            | `string` | Failure redirect URL                          |
@@ -321,20 +320,34 @@ curl "https://api.chainpal.org/api/v1/payments?page=1&pageSize=10&status=complet
   "success": true,
   "message": "payments fetched successfully",
   "data": {
-    "items": [
+    "data": [
       {
-        "_id": "507f1f77bcf86cd799439011",
-        "reference": "ORDER12345678",
+        "id": "507f1f77bcf86cd799439011",
+        "clientReference": "ORDER12345678",
         "fiatAmount": "5000.00",
         "currency": "NGN",
         "status": "completed",
         "created_at": "2024-01-15T14:00:00Z"
       }
     ],
-    "page": 1,
+    "currentPage": 1,
     "pageSize": 10,
     "totalItems": 1,
-    "totalPages": 1
+    "totalPages": 1,
+    "hasNext": false,
+    "hasPrev": false
   }
 }
 ```
+
+### Pagination Response Fields
+
+| Field         | Type      | Description                                          |
+| :------------ | :-------- | :--------------------------------------------------- |
+| `data`        | `array`   | The payment records on this page                     |
+| `currentPage` | `integer` | The page returned (1-indexed)                        |
+| `pageSize`    | `integer` | Items per page                                       |
+| `totalItems`  | `integer` | Total payments matching the filter                   |
+| `totalPages`  | `integer` | Total page count                                     |
+| `hasNext`     | `boolean` | True if a next page exists                           |
+| `hasPrev`     | `boolean` | True if a previous page exists                       |

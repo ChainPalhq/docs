@@ -85,6 +85,13 @@ All webhook events follow this structure:
 
 ## Event Types
 
+<Note>
+**About `reference` vs `clientReference` in `data`**: Both fields carry the
+same value — the `clientReference` you supplied when initializing the payment
+(or the one ChainPal generated for you if you didn't pass one). `reference`
+is kept as a legacy alias; new integrations should read `clientReference`.
+</Note>
+
 ### payment.received
 
 Sent immediately when the initial cryptocurrency transaction is detected on the blockchain, before fiat processing completes.
@@ -156,7 +163,7 @@ Sent when a payment has failed (e.g., expired, underpaid, or processing error).
   "createdAt": "2024-01-15T15:00:00Z",
   "data": {
     "paymentId": "507f1f77bcf86cd799439011",
-    "reference": "checkoutORDER12345678",
+    "reference": "ORDER12345678",
     "clientReference": "ORDER12345678",
     "fiatAmount": "5000.00",
     "currency": "NGN",
