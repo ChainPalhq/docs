@@ -32,12 +32,46 @@ ChainPal provides two types of API keys for different use cases:
 
 ## Key Prefixes
 
+The prefix encodes both the **type** (public vs secret) and the
+**environment** (test vs live):
+
 | Environment | Key Type | Prefix        |
 | :---------- | :------- | :------------ |
 | Test        | Public   | `cp_pk_test_` |
 | Test        | Secret   | `cp_sk_test_` |
 | Live        | Public   | `cp_pk_live_` |
 | Live        | Secret   | `cp_sk_live_` |
+
+## Test and Live keys are independent — use them side-by-side
+
+There is no per-account "active environment" toggle. Each request is
+routed by the prefix on the key you send:
+
+- `cp_*_test_*` → request is processed in **test** mode
+- `cp_*_live_*` → request is processed in **live** mode
+
+This means you can run a staging integration against your test keys at
+the same time your production servers are calling with live keys —
+without flipping any switch.
+
+What this implies for your integration:
+
+- The `environment` field on every payment object reflects the env of
+  the key used to create it. A payment created with a test key is and
+  stays a test payment; same for live.
+- Webhook URLs and callback URLs are configured **per environment**
+  (`testWebhookURL` + `testCallbackURL`, `liveWebhookURL` +
+  `liveCallbackURL`). The dispatcher picks the right pair based on the
+  payment's env.
+- Rate limits are tracked per `(business, environment)` bucket — test
+  traffic doesn't eat into your live budget.
+
+<Note>
+**Migrating from the old "switch environment" model?** The
+`POST /users/public-api/toggle-environment` endpoint is deprecated and
+returns `410 Gone`. Just send requests with whichever key matches the
+env you want.
+</Note>
 
 ## Authorization Header
 

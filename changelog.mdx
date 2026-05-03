@@ -140,6 +140,26 @@ Both keys in the webhook payload are now populated from your
 integrations should prefer `clientReference`, but no urgent migration is
 needed.
 
+### Test and live keys can now be used side-by-side
+
+Previously a merchant account had a single "active" environment and the API
+rejected requests sent with a key whose prefix didn't match. That gate is
+gone. Each request is routed by the prefix on the key you send
+(`cp_*_test_*` → test, `cp_*_live_*` → live), so you can run a staging
+integration and a live integration concurrently without flipping a switch.
+The deprecated `POST /users/public-api/toggle-environment` endpoint now
+returns `410 Gone`. See the
+[Authentication](./authentication#test-and-live-keys-are-independent--use-them-side-by-side)
+page for the full picture.
+
+### Disabling the API in your dashboard preserves your keys
+
+If a merchant disables the developer API in the dashboard, requests with
+existing keys start returning `401 Unauthorized` (as expected), **but the
+keys themselves are kept on file**. Re-enabling resumes service without
+forcing a key rotation. Your integration code does not need to handle a
+"keys destroyed" case any more.
+
 ### Testnet underpayment behavior now matches mainnet
 
 Mainnet payments have always rejected materially-underpaid transactions via
