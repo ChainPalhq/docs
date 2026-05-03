@@ -1,0 +1,170 @@
+---
+title: "Changelog & Migration Notes"
+description: "What changed in the ChainPal API and what existing integrations need to do"
+---
+
+# Changelog & Migration Notes
+
+A short, action-oriented summary of recent API behavior changes. Read the
+**Action required** sections if you have an existing integration — the rest is
+informational.
+
+---
+
+## TL;DR
+
+- The system-internal `reference` field is **no longer returned** on payment
+  detail / list responses. Read `clientReference` instead. Webhooks still send
+  both keys (same value) for backward compatibility.
+- The `paidAt` field is now **omitted** from the verify response when the
+  payment hasn't been received yet (previously: empty string).
+- The hosted-checkout redirect URL now **always** includes both `paymentId`
+  (a real, verifiable payment ID) and `reference` (your `clientReference`).
+- Underpayment protection on **testnets** now matches mainnet behavior —
+  underpaid testnet transactions reach you as `failed` with a populated
+  `deficitAmount` instead of auto-completing.
+
+---
+
+## Breaking changes
+
+### 1. `reference` removed from payment detail and list responses
+
+Internally we have two reference values per payment:
+
+- `clientReference` — the value you supplied (or one we generated for you if
+  you didn't pass one). **Stable. Never mutated.**
+- `reference` (system-internal) — used as the idempotency key with our
+  exchange providers. May be regenerated mid-lifecycle if an exchange order
+  expires.
+
+Exposing the system-internal `reference` to merchants was misleading because
+it could change. We've removed it from outbound API surfaces.
+
+**Affected endpoints:**
+
+- `GET /api/v1/payments/:paymentId` — `reference` is no longer in the response.
+- `GET /api/v1/payments` (list) — each row no longer includes `reference`.
+
+**Action required**
+
+Anywhere you read `payment.reference` from these responses, switch to
+`payment.clientReference`. The value is the same as what you passed (or the
+auto-generated one we use if you didn't pass one).
+
+```diff
+- const ref = payment.reference;
++ const ref = payment.clientReference;
+```
+
+### 2. `paidAt` is omitted (not empty) when unpaid
+
+`GET /api/v1/payments/:paymentId/verify` previously returned `"paidAt": ""`
+when the payment hadn't been received. It now **omits the field entirely**.
+
+**Action required**
+
+If you parse `paidAt` directly as an ISO timestamp, handle the missing case:
+
+```diff
+- const ts = new Date(response.paidAt);
++ const ts = response.paidAt ? new Date(response.paidAt) : null;
+```
+
+### 3. List Payments response shape
+
+The `GET /api/v1/payments` (list) response was previously documented as
+`{ items, page, pageSize, totalItems, totalPages }`. The actual response shape
+is `{ data, currentPage, pageSize, totalItems, totalPages, hasNext, hasPrev }`.
+
+If you coded to the **documented** shape, your integration was already
+broken — switch to the actual shape. If you coded to the actual response,
+nothing to do.
+
+```diff
+- response.data.items.forEach(...)
+- response.data.page
++ response.data.data.forEach(...)
++ response.data.currentPage
+```
+
+See the updated [List Payments](./payments#list-payments) docs.
+
+---
+
+## Improvements (no action required)
+
+### Hosted-checkout redirect now always carries useful query params
+
+When the hosted checkout redirects the customer back to your `callbackURL`
+(success) or `failureURL` (failure), it now reliably appends:
+
+- `paymentId` — the real ChainPal payment ID (a 24-character ObjectID hex
+  string). You can pass this directly to
+  `GET /api/v1/payments/:paymentId/verify`.
+- `reference` — your `clientReference`.
+
+**Previously**: `paymentId` could be the 12-character `payCode` (which the
+verify endpoint rejects), and `reference` was sometimes empty if you hadn't
+passed one at initialization.
+
+**Now**: both are guaranteed populated. If you weren't using these query
+params before, you can rely on them now.
+
+### `clientReference` is now always populated
+
+If you don't supply a `reference` when calling
+`POST /api/v1/payments`, ChainPal generates one for you and stores it as the
+payment's `clientReference`. You'll see this same value in:
+
+- The `clientReference` field of every API response that surfaces it.
+- The `reference` and `clientReference` keys in webhook payloads.
+- The `reference` query param appended to your `callbackURL` / `failureURL`
+  redirects.
+
+This means your integrations can rely on `clientReference` as the canonical,
+stable, always-present payment identifier without having to fall back to
+`paymentId` for unsupplied-reference cases.
+
+### `failureURL` is now exposed in the checkout DTO
+
+If you set `failureURL` on payment initialization, the checkout page can now
+read it back through the internal API. This means failure redirects will
+actually fire — previously the field was ignored on the checkout page even
+when you set it.
+
+### Webhooks: `reference` and `clientReference` carry the same value
+
+Both keys in the webhook payload are now populated from your
+`clientReference`. The `reference` key is kept as a legacy alias — new
+integrations should prefer `clientReference`, but no urgent migration is
+needed.
+
+### Testnet underpayment behavior now matches mainnet
+
+Mainnet payments have always rejected materially-underpaid transactions via
+the exchange-provider settlement step. On **testnets**, the settlement step
+is skipped (no exchange provider in test mode), so underpaid testnet
+transactions previously auto-completed.
+
+Testnet now applies the same underpayment check as mainnet: an underpaid
+transaction is marked `status: failed` with a populated `deficitAmount`. If
+your test integration relied on the old behavior of "any non-zero crypto
+counts as paid", update it to handle the realistic `failed`/`deficitAmount`
+case — this matches what your live integration would have seen all along.
+
+---
+
+## Quick checklist for existing integrations
+
+- [ ] Replace any reads of `payment.reference` with `payment.clientReference`
+      on `GET /payments/:id` and `GET /payments`.
+- [ ] Treat the verify endpoint's `paidAt` as optional — guard before parsing
+      as a date.
+- [ ] If you parsed list responses as `{ items, page }`, switch to
+      `{ data, currentPage }`.
+- [ ] (Optional) Start using `clientReference` as your canonical payment
+      identifier in webhook handlers and redirect-callback handlers.
+
+If anything in your integration breaks, reach out at
+[help@chainpal.xyz](mailto:help@chainpal.xyz).

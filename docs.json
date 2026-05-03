@@ -9,44 +9,61 @@
   },
   "favicon": "/favicon.png",
   "navigation": {
+    "global": {
+      "anchors": [
+        {
+          "anchor": "Dashboard",
+          "icon": "gauge",
+          "href": "https://app.chainpal.org/"
+        },
+        {
+          "anchor": "Community",
+          "icon": "discord",
+          "href": "https://discord.gg/RbfVaUmZwm"
+        },
+        {
+          "anchor": "Blog",
+          "icon": "newspaper",
+          "href": "https://medium.com/@chainpal-blog"
+        }
+      ]
+    },
     "tabs": [
       {
         "tab": "API Reference",
         "groups": [
           {
             "group": "Getting Started",
-            "pages": ["index", "authentication", "errors", "types"]
+            "pages": [
+              "index",
+              "authentication",
+              "errors",
+              "types"
+            ]
           },
           {
             "group": "API Endpoints",
-            "pages": ["payments", "quote", "webhooks"]
+            "pages": [
+              "payments",
+              "quote",
+              "webhooks"
+            ]
           },
           {
             "group": "Concepts",
-            "pages": ["checkout"]
+            "pages": [
+              "checkout"
+            ]
+          },
+          {
+            "group": "Updates",
+            "pages": [
+              "changelog"
+            ]
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Dashboard",
-          "href": "https://app.chainpal.org/",
-          "icon": "gauge"
-        },
-        {
-          "anchor": "Community",
-          "href": "https://discord.gg/RbfVaUmZwm",
-          "icon": "discord"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://medium.com/@chainpal-blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
+    ]
   },
   "logo": {
     "light": "/logo/light.png",
